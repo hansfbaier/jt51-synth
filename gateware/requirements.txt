@@ -1,0 +1,4 @@
+git+https://github.com/nmigen/nmigen.git
+git+https://github.com/hansfbaier/nmigen-boards.git@qmtech-xc7a35t
+git+https://github.com/hansfbaier/luna.git@uac2
+git+https://github.com/hansfbaier/adat-core.git
