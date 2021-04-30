@@ -5,3 +5,8 @@ which implements a YM2151 chip.
 
 USB2.0 High Speed MIDI Interface for super low latency,  optical ADAT outputs.
 More coming soon.
+
+Before using this repository, be sure to initialize the git submodules:
+
+$ git submodule init
+$ git submodule update
