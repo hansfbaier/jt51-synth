@@ -68,14 +68,15 @@ class JT51SynthPlatform(QMTechXC7A35TCorePlatform, LUNAPlatform):
                 data="J_2:15 J_2:16 J_2:17 J_2:18 J_2:19 J_2:20 J_2:21 J_2:22",
                 clk="J_2:7", # this needs to be a clock pin of the FPGA or the core won't work
                 dir="J_2:9", nxt="J_2:10", stp="J_2:11", rst="J_2:8",
-                attrs=Attrs(io_standard="LVCMOS33")
+                attrs=Attrs(IOSTANDARD="LVCMOS33")
             ),
 
-            UARTResource(0, rx="J_2:6", tx="J_2:5", attrs=Attrs(io_standard="LVCMOS33")),
+            UARTResource(0, rx="J_2:6", tx="J_2:5", attrs=Attrs(IOSTANDARD="LVCMOS33")),
 
             Resource("adat", 0,
                 Subsignal("tx", Pins("J_3:5", dir="o")),
-                Subsignal("rx", Pins("J_3:6", dir="i")))
+                Subsignal("rx", Pins("J_3:6", dir="i")),
+                Attrs(IOSTANDARD="LVCMOS33"))
         ]
 
         super().__init__(standalone=True)
