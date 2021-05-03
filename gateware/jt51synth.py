@@ -3,8 +3,10 @@
 # Copyright (c) 2021 Hans Baier <hansfbaier@gmail.com>
 # SPDX-License-Identifier: MIT
 import os
+from typing import Counter
+from luna.gateware import stream
 
-from nmigen              import Elaboratable, Module, Cat
+from nmigen              import Elaboratable, Module, Cat, Signal
 
 from luna                import top_level_cli
 from luna.usb2           import USBDevice, USBStreamInEndpoint, USBStreamOutEndpoint
@@ -35,9 +37,9 @@ class JT51Synth(Elaboratable):
             d.idVendor           = 0x16d0
             d.idProduct          = 0x0f3b
 
-            d.iManufacturer      = "N/A"
-            d.iProduct           = "JT51-Synth"
-            d.iSerialNumber      = "0001"
+            #d.iManufacturer      = "N/A"
+            #d.iProduct           = "JT51-Synth"
+            #d.iSerialNumber      = "0001"
             d.bcdDevice          = 0.01
 
             d.bNumConfigurations = 1
@@ -45,7 +47,7 @@ class JT51Synth(Elaboratable):
         with descriptors.ConfigurationDescriptor() as configDescr:
             interface = uac.StandardMidiStreamingInterfaceDescriptorEmitter()
             interface.bInterfaceNumber = 0
-            interface.bNumEndpoints = 1 # 2
+            interface.bNumEndpoints = 1
             configDescr.add_subordinate_descriptor(interface)
 
             streamingInterface = uac.ClassSpecificMidiStreamingInterfaceDescriptorEmitter()
@@ -127,14 +129,21 @@ class JT51Synth(Elaboratable):
         )
         usb.add_endpoint(ep1_in)
 
-        leds    = Cat(platform.request_optional("led", i, default=NullPin()) for i in range(8))
+        led    = platform.request("led", 0)
         with m.If(ep1_out.stream.valid):
             m.d.usb += [
-                leds     .eq(ep1_out.stream.payload),
+                led.eq(ep1_out.stream.payload[4]),
+                ep1_in.stream.stream_eq(ep1_out.stream)
             ]
 
+        #counter = Signal(24)
+        #m.d.sync += [
+        #    counter.eq(counter + 1),
+        #    led.eq(counter[20])
+        #]
+
         # Always accept data as it comes in.
-        m.d.comb += ep1_out.stream.ready.eq(1)
+        m.d.usb += ep1_out.stream.ready.eq(1)
 
         # Connect our device as a high speed device
         m.d.comb += [

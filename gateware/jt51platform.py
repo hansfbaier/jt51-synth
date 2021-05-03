@@ -50,7 +50,6 @@ class JT51SynthClockDomainGenerator(Elaboratable):
 
         # Connect up our clock domains.
         m.d.comb += [
-            ResetSignal("usb") .eq(~locked),
             ClockSignal("sync").eq(main_clock),
             ClockSignal("fast").eq(fast_clock)
         ]
@@ -66,16 +65,15 @@ class JT51SynthPlatform(QMTechXC7A35TCorePlatform, LUNAPlatform):
             # USB2 / ULPI section of the USB3300.
             ULPIResource("ulpi", 0,
                 data="J_2:15 J_2:16 J_2:17 J_2:18 J_2:19 J_2:20 J_2:21 J_2:22",
-                clk="J_2:7", # this needs to be a clock pin of the FPGA or the core won't work
-                dir="J_2:9", nxt="J_2:10", stp="J_2:11", rst="J_2:8",
-                attrs=Attrs(IOSTANDARD="LVCMOS33")
-            ),
+                clk="J_2:9", # this needs to be a clock pin of the FPGA or the core won't work
+                dir="J_2:11", nxt="J_2:12", stp="J_2:13", rst="J_2:10",
+                attrs=Attrs(IOSTANDARD="LVCMOS33")),
 
-            UARTResource(0, rx="J_2:6", tx="J_2:5", attrs=Attrs(IOSTANDARD="LVCMOS33")),
+            UARTResource(0, rx="J_2:8", tx="J_2:7", attrs=Attrs(IOSTANDARD="LVCMOS33")),
 
             Resource("adat", 0,
-                Subsignal("tx", Pins("J_3:5", dir="o")),
-                Subsignal("rx", Pins("J_3:6", dir="i")),
+                Subsignal("tx", Pins("J_3:7", dir="o")),
+                Subsignal("rx", Pins("J_3:8", dir="i")),
                 Attrs(IOSTANDARD="LVCMOS33"))
         ]
 
