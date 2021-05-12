@@ -47,21 +47,22 @@ class JT51Synth(Elaboratable):
         with descriptors.ConfigurationDescriptor() as configDescr:
             interface = uac.StandardMidiStreamingInterfaceDescriptorEmitter()
             interface.bInterfaceNumber = 0
-            interface.bNumEndpoints = 1
+            interface.bNumEndpoints = 1 # 2
             configDescr.add_subordinate_descriptor(interface)
 
             streamingInterface = uac.ClassSpecificMidiStreamingInterfaceDescriptorEmitter()
 
-            outToHostJack = uac.MidiOutJackDescriptorEmitter()
-            outToHostJack.bJackID = 1
-            outToHostJack.bJackType = uac.MidiStreamingJackTypes.EMBEDDED
-            outToHostJack.add_source(2)
-            streamingInterface.add_subordinate_descriptor(outToHostJack)
-
-            inToDeviceJack = uac.MidiInJackDescriptorEmitter()
-            inToDeviceJack.bJackID = 2
-            inToDeviceJack.bJackType = uac.MidiStreamingJackTypes.EXTERNAL
-            streamingInterface.add_subordinate_descriptor(inToDeviceJack)
+            # prevent the descriptor from getting too large, see https://github.com/greatscottgadgets/luna/issues/86
+            #outToHostJack = uac.MidiOutJackDescriptorEmitter()
+            #outToHostJack.bJackID = 1
+            #outToHostJack.bJackType = uac.MidiStreamingJackTypes.EMBEDDED
+            #outToHostJack.add_source(2)
+            #streamingInterface.add_subordinate_descriptor(outToHostJack)
+#
+            #inToDeviceJack = uac.MidiInJackDescriptorEmitter()
+            #inToDeviceJack.bJackID = 2
+            #inToDeviceJack.bJackType = uac.MidiStreamingJackTypes.EXTERNAL
+            #streamingInterface.add_subordinate_descriptor(inToDeviceJack)
 
             inFromHostJack = uac.MidiInJackDescriptorEmitter()
             inFromHostJack.bJackID = 3
@@ -83,14 +84,15 @@ class JT51Synth(Elaboratable):
             outMidiEndpoint.add_associated_jack(3)
             streamingInterface.add_subordinate_descriptor(outMidiEndpoint)
 
-            inEndpoint = uac.StandardMidiStreamingDataEndpointDescriptorEmitter()
-            inEndpoint.bEndpointAddress = USBDirection.IN.from_endpoint_address(1)
-            inEndpoint.wMaxPacketSize = self.MAX_PACKET_SIZE
-            streamingInterface.add_subordinate_descriptor(inEndpoint)
-
-            inMidiEndpoint = uac.ClassSpecificMidiStreamingBulkDataEndpointDescriptorEmitter()
-            inMidiEndpoint.add_associated_jack(1)
-            streamingInterface.add_subordinate_descriptor(inMidiEndpoint)
+            # prevent the descriptor from getting too large, see https://github.com/greatscottgadgets/luna/issues/86
+            #inEndpoint = uac.StandardMidiStreamingDataEndpointDescriptorEmitter()
+            #inEndpoint.bEndpointAddress = USBDirection.IN.from_endpoint_address(1)
+            #inEndpoint.wMaxPacketSize = self.MAX_PACKET_SIZE
+            #streamingInterface.add_subordinate_descriptor(inEndpoint)
+#
+            #inMidiEndpoint = uac.ClassSpecificMidiStreamingBulkDataEndpointDescriptorEmitter()
+            #inMidiEndpoint.add_associated_jack(1)
+            #streamingInterface.add_subordinate_descriptor(inMidiEndpoint)
 
             configDescr.add_subordinate_descriptor(streamingInterface)
 
@@ -123,18 +125,17 @@ class JT51Synth(Elaboratable):
         )
         usb.add_endpoint(ep1_out)
 
-        ep1_in = USBStreamInEndpoint(
-            endpoint_number=1, # EP 1 IN
-            max_packet_size=self.MAX_PACKET_SIZE
-        )
-        usb.add_endpoint(ep1_in)
+        #ep1_in = USBStreamInEndpoint(
+        #    endpoint_number=1, # EP 1 IN
+        #    max_packet_size=self.MAX_PACKET_SIZE
+        #)
+        #usb.add_endpoint(ep1_in)
 
         led    = platform.request("led", 0)
-        with m.If(ep1_out.stream.valid):
-            m.d.usb += [
-                led.eq(ep1_out.stream.payload[4]),
-                ep1_in.stream.stream_eq(ep1_out.stream)
-            ]
+        #with m.If(ep1_out.stream.valid):
+        #    m.d.usb += [
+        #        #ep1_in.stream.stream_eq(ep1_out.stream)
+        #    ]
 
         #counter = Signal(24)
         #m.d.sync += [
@@ -147,6 +148,7 @@ class JT51Synth(Elaboratable):
 
         # Connect our device as a high speed device
         m.d.comb += [
+            led.eq(ep1_out.stream.payload[4]),
             usb.connect          .eq(1),
             usb.full_speed_only  .eq(0),
         ]
