@@ -48,8 +48,11 @@ class JT51SynthClockDomainGenerator(Elaboratable):
             o_LOCKED               = locked,
         )
 
+        led = platform.request("led")
+
         # Connect up our clock domains.
         m.d.comb += [
+            led.eq(locked),
             ClockSignal("sync").eq(main_clock),
             ClockSignal("fast").eq(fast_clock)
         ]
