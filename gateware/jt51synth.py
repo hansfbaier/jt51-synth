@@ -131,7 +131,7 @@ class JT51Synth(Elaboratable):
         #)
         #usb.add_endpoint(ep1_in)
 
-        led    = platform.request("led", 0)
+        led    = platform.request("debug_leds", 0)
         #with m.If(ep1_out.stream.valid):
         #    m.d.usb += [
         #        #ep1_in.stream.stream_eq(ep1_out.stream)
@@ -148,7 +148,7 @@ class JT51Synth(Elaboratable):
 
         # Connect our device as a high speed device
         m.d.comb += [
-            led.eq(ep1_out.stream.payload[4]),
+            led.eq(ep1_out.stream.payload),
             usb.connect          .eq(1),
             usb.full_speed_only  .eq(0),
         ]
