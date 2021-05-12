@@ -37,9 +37,9 @@ class JT51Synth(Elaboratable):
             d.idVendor           = 0x16d0
             d.idProduct          = 0x0f3b
 
-            #d.iManufacturer      = "N/A"
-            #d.iProduct           = "JT51-Synth"
-            #d.iSerialNumber      = "0001"
+            d.iManufacturer      = "N/A"
+            d.iProduct           = "JT51-Synth"
+            d.iSerialNumber      = "0001"
             d.bcdDevice          = 0.01
 
             d.bNumConfigurations = 1
@@ -131,11 +131,12 @@ class JT51Synth(Elaboratable):
         #)
         #usb.add_endpoint(ep1_in)
 
-        led    = platform.request("debug_leds", 0)
-        #with m.If(ep1_out.stream.valid):
-        #    m.d.usb += [
-        #        #ep1_in.stream.stream_eq(ep1_out.stream)
-        #    ]
+        leds = platform.request("debug_leds", 0)
+        with m.If(ep1_out.stream.valid):
+            m.d.usb += [
+                leds.leds.eq(ep1_out.stream.payload),
+                #ep1_in.stream.stream_eq(ep1_out.stream)
+            ]
 
         #counter = Signal(24)
         #m.d.sync += [
@@ -148,7 +149,6 @@ class JT51Synth(Elaboratable):
 
         # Connect our device as a high speed device
         m.d.comb += [
-            led.eq(ep1_out.stream.payload),
             usb.connect          .eq(1),
             usb.full_speed_only  .eq(0),
         ]
@@ -157,6 +157,7 @@ class JT51Synth(Elaboratable):
 
 if __name__ == "__main__":
     os.environ["LUNA_PLATFORM"] = "jt51platform:JT51SynthPlatform"
+    #os.environ["LUNA_PLATFORM"] = "luna.gateware.platform.de0_nano:DE0NanoPlatform"
     e = JT51Synth()
     d = e.create_descriptors()
     descriptor_bytes = d.get_descriptor_bytes(2)
