@@ -63,6 +63,14 @@ class JT51SynthPlatform(QMTechXC7A35TCorePlatform, LUNAPlatform):
     clock_domain_generator = JT51SynthClockDomainGenerator
     default_usb_connection = "ulpi"
 
+    def toolchain_prepare(self, fragment, name, **kwargs):
+        plan = super().toolchain_prepare(fragment, name, **kwargs)
+        plan.files['top.xdc'] += "\ncreate_clock -name usb_clk -period 16.666666666666668 [get_ports {ulpi_0__clk__io}]\n" + \
+                                 "set_output_delay -clock usb_clk 5 [get_ports ulpi_0__stp__io]\n" + \
+                                 "set_output_delay -clock usb_clk -1 -min [get_ports ulpi_0__stp__io]\n"
+
+        return plan
+
     def __init__(self):
         self.resources += [
             # USB2 / ULPI section of the USB3300.
@@ -70,7 +78,7 @@ class JT51SynthPlatform(QMTechXC7A35TCorePlatform, LUNAPlatform):
                 data="J_2:15 J_2:16 J_2:17 J_2:18 J_2:19 J_2:20 J_2:21 J_2:22",
                 clk="J_2:9", # this needs to be a clock pin of the FPGA or the core won't work
                 dir="J_2:11", nxt="J_2:12", stp="J_2:13", rst="J_2:10",
-                attrs=Attrs(IOSTANDARD="LVCMOS33")),
+                attrs=Attrs(IOSTANDARD="LVCMOS33", SLEW="FAST")),
 
             Resource("debug_leds", 0, Subsignal("leds", Pins("J_2:31 J_2:32 J_2:33 J_2:34 J_2:35 J_2:36 J_2:37 J_2:38", dir="o")), Attrs(IOSTANDARD="LVCMOS33")),
 
