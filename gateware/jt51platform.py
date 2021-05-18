@@ -79,14 +79,14 @@ class JT51SynthPlatform(QMTechXC7A35TCorePlatform, LUNAPlatform):
         self.resources += [
             # USB2 / ULPI section of the USB3300.
             ULPIResource("ulpi", 0,
-                data="J_2:15 J_2:16 J_2:17 J_2:18 J_2:19 J_2:20 J_2:21 J_2:22",
+                data="J_2:28 J_2:26 J_2:24 J_2:22 J_2:20 J_2:18 J_2:16 J_2:14",
                 clk="J_2:9", # this needs to be a clock pin of the FPGA or the core won't work
-                dir="J_2:11", nxt="J_2:12", stp="J_2:13", rst="J_2:10",
+                dir="J_2:17", nxt="J_2:15", stp="J_2:13", rst="J_2:19", clk_dir="o",
                 attrs=Attrs(IOSTANDARD="LVCMOS33", SLEW="FAST")),
 
-            Resource("debug_leds", 0, Subsignal("leds", Pins("J_2:31 J_2:32 J_2:33 J_2:34 J_2:35 J_2:36 J_2:37 J_2:38", dir="o")), Attrs(IOSTANDARD="LVCMOS33")),
+            Resource("debug_leds", 0, Subsignal("leds", Pins("J_2:34 J_2:36 J_2:38 J_2:40 J_2:42 J_2:44 J_2:46 J_2:48", dir="o")), Attrs(IOSTANDARD="LVCMOS33")),
 
-            UARTResource(0, rx="J_2:8", tx="J_2:7", attrs=Attrs(IOSTANDARD="LVCMOS33")),
+            UARTResource(0, rx="J_2:8", tx="J_2:10", attrs=Attrs(IOSTANDARD="LVCMOS33")),
 
             Resource("adat", 0,
                 Subsignal("tx", Pins("J_3:7", dir="o")),
