@@ -31,18 +31,18 @@ class JT51SynthClockDomainGenerator(Elaboratable):
             p_COMPENSATION         = "ZHOLD",
             p_STARTUP_WAIT         = "FALSE",
             p_DIVCLK_DIVIDE        = 1,
-            p_CLKFBOUT_MULT        = 20,
+            p_CLKFBOUT_MULT        = 30,
             p_CLKFBOUT_PHASE       = 0.000,
-            p_CLKOUT0_DIVIDE       = 20,
+            p_CLKOUT0_DIVIDE       = 25,  # 60MHz
             p_CLKOUT0_PHASE        = 0.000,
             p_CLKOUT0_DUTY_CYCLE   = 0.500,
-            p_CLKOUT1_DIVIDE       = 12,
+            p_CLKOUT1_DIVIDE       = 12,  # 125MHz
             p_CLKOUT1_PHASE        = 0.000,
             p_CLKOUT1_DUTY_CYCLE   = 0.500,
-            p_CLKIN1_PERIOD        = 16.666666,
+            p_CLKIN1_PERIOD        = 20,
             i_CLKFBIN              = feedback,
             o_CLKFBOUT             = feedback,
-            i_CLKIN1               = ClockSignal("usb"),
+            i_CLKIN1               = platform.request(platform.default_clk),
             o_CLKOUT0              = main_clock,
             o_CLKOUT1              = fast_clock,
             o_LOCKED               = locked,
@@ -54,6 +54,7 @@ class JT51SynthClockDomainGenerator(Elaboratable):
         m.d.comb += [
             led.eq(locked),
             ClockSignal("sync").eq(main_clock),
+            ClockSignal("usb").eq(main_clock),
             ClockSignal("fast").eq(fast_clock)
         ]
 
@@ -65,13 +66,16 @@ class JT51SynthPlatform(QMTechXC7A35TCorePlatform, LUNAPlatform):
 
     def toolchain_prepare(self, fragment, name, **kwargs):
         plan = super().toolchain_prepare(fragment, name, **kwargs)
-        plan.files['top.xdc'] += "\ncreate_clock -name usb_clk -period 16.666666666666668 [get_ports {ulpi_0__clk__io}]\n" + \
-                                 "set_output_delay -clock usb_clk 5 [get_ports ulpi_0__stp__io]\n" + \
-                                 "set_output_delay -clock usb_clk -1 -min [get_ports ulpi_0__stp__io]\n"
+        plan.files['top.xdc'] += "set ulpi_out [get_ports -regexp ulpi.*(stp|data).*]\n" + \
+                                 "set_output_delay -clock usb_clk 5 $ulpi_out\n" + \
+                                 "set_output_delay -clock usb_clk -1 -min $ulpi_out\n" + \
+                                 "set ulpi_inputs [get_ports -regexp ulpi.*(data|dir|nxt).*]\n" + \
+                                 "set_input_delay -clock usb_clk -min 2 $ulpi_inputs\n" + \
+                                 "set_input_delay -clock usb_clk -max 5 $ulpi_inputs\n"
 
         return plan
 
-    def __init__(self):
+    def __init__(self, toolchain="Vivado"):
         self.resources += [
             # USB2 / ULPI section of the USB3300.
             ULPIResource("ulpi", 0,
@@ -90,4 +94,4 @@ class JT51SynthPlatform(QMTechXC7A35TCorePlatform, LUNAPlatform):
                 Attrs(IOSTANDARD="LVCMOS33"))
         ]
 
-        super().__init__(standalone=True)
+        super().__init__(standalone=True, toolchain=toolchain)
