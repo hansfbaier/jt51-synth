@@ -3,6 +3,33 @@ import gzip
 import asyncio
 import vgm
 
+lfowaves = {
+    0: "SAW",
+    1: "SQUARE",
+    2: "TRIANGLE",
+    3: "NOISE"
+}
+
+notes = {
+     0: "C#",
+     1: "D",
+     2: "D#",
+     4: "E",
+     5: "F",
+     6: "F#",
+     8: "G",
+     9: "G#",
+    10: "A",
+    12: "A#",
+    13: "B",
+    14: "C"
+}
+
+onoff = {
+    0: "OFF",
+    1: "ON "
+}
+
 class TSVStreamPlayer(vgm.VGMStreamPlayer):
     def __init__(self, file):
         self.file = file
@@ -10,9 +37,14 @@ class TSVStreamPlayer(vgm.VGMStreamPlayer):
     async def ym2151_write(self, address, data):
         result = ""
         if address == 0x08:
-            channel = data & 0x7
-            sound = (data >> 3) & 0xf
-            result = "KEY ON     : channel {}: sound {}".format(channel, sound)
+            channel   = data & 0x7
+            slot_bits = (data >> 3) & 0xf
+            modulator1 =  slot_bits & 0b0001
+            carrier1   = (slot_bits & 0b0010) >> 1
+            modulator2 = (slot_bits & 0b0100) >> 2
+            carrier2   = (slot_bits & 0b1000) >> 3
+            result = "KEY SWITCH : CHANNEL {}: CARRIER1: {} MODULATOR1: {} CARRIER2: {} MODULATOR2: {}"\
+                        .format(channel, onoff[carrier1], onoff[modulator1], onoff[carrier2], onoff[modulator2])
         elif address == 0x01:
             if (data == 0x02):
                 result = "LFO RESET"
@@ -20,15 +52,35 @@ class TSVStreamPlayer(vgm.VGMStreamPlayer):
                 result = "LFO RST OFF"
             else:
                 result = "*** TEST MODE: {:02x} ***".format(data)
+        elif address == 0x18:
+            result = f"LFO FREQ   : {data}"
+        elif address == 0x19:
+            modulation_type = "PM DEPTH" if data & 0b10000000 > 0 else "AM DEPTH"
+            value = data & 0x7f
+            result = f"{modulation_type}   : {value}"
+        elif address == 0x1b:
+            wave = data & 0b11
+            result = f"LFO WAVEFRM: {lfowaves[wave]}"
         elif address & 0xf8 == 0x28:
             channel = 0x7 & address
             note = data & 0xf
             octave = (data >> 4) & 0x7
-            result = "KEY CODE   : channel {}: octave: {} note: {}".format(channel, octave, note)
+            result = "KEY CODE   : CHANNEL {}: OCTAVE: {} NOTE: {}".format(channel, octave, notes[note])
+        elif address & 0b11111000 == 0x20:
+            operator = address & 0x7
+            rl = data >> 6
+            feedback = (data >> 3) & 0x7
+            connection = data & 0x7
+            result = f"OPERATOR {operator} : CONNECTION: {connection} FEEDBACK: {feedback} (RL): {rl}"
+        elif address & 0xf8 == 0x38:
+            operator = address & 0b111
+            am_sensitivity = 0x3 & data
+            pm_sensitivity = 0x7 & (data >> 4)
+            result = f"OPERATOR {operator} : PM SENSITIVITY: {pm_sensitivity} AM SENSITIVITY: {am_sensitivity}"
         elif address & 0xf8 == 0x30:
             channel = 0x7 & address
             fraction = (data >> 2) & 0x3f
-            result = "KEY FRAC    : channel {}: fraction: {}".format(channel, fraction)
+            result = "KEY FRAC   : channel {}: fraction: {}".format(channel, fraction)
         elif address & 0xe0 == 0x40:
             envelope = address & 0x1f
             detune1 = (data >> 4) & 0x7
@@ -47,7 +99,7 @@ class TSVStreamPlayer(vgm.VGMStreamPlayer):
             if attack_rate > 0:
                 result += "ATTACK RATE: {:02d}".format(envelope, attack_rate)
             if keyscaling > 0:
-                result += "KEYSCALING: {:02d}".format(envelope, keyscaling)
+                result += " KEYSCALING: {:02d}".format(envelope, keyscaling)
         elif address & 0xe0 == 0xa0:
             envelope = address & 0x1f
             first_decay_rate = data & 0b11111
