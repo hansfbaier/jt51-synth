@@ -131,11 +131,12 @@ class JT51Synth(Elaboratable):
         #)
         #usb.add_endpoint(ep1_in)
 
-        leds = platform.request("debug_leds", 0)
+        m.submodules.midicontroller = midicontroller = MIDIController()
+
+        leds = Cat(platform.request("led", i) for i in range(8))
         with m.If(ep1_out.stream.valid):
             m.d.usb += [
-                leds.leds.eq(ep1_out.stream.payload),
-                #ep1_in.stream.stream_eq(ep1_out.stream)
+                leds.eq(ep1_out.stream.payload),
             ]
 
         #counter = Signal(24)
