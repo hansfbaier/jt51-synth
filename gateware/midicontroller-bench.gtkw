@@ -1,0 +1,43 @@
+[*]
+[*] GTKWave Analyzer v3.3.108 (w)1999-2020 BSI
+[*] Sun May 30 21:06:59 2021
+[*]
+[dumpfile] "midicontroller.vcd"
+[dumpfile_mtime] "Sun May 30 21:02:03 2021"
+[dumpfile_size] 1582
+[savefile] "gateware/midicontroller-bench.gtkw"
+[timestart] 116900
+[size] 3830 2054
+[pos] -1 -1
+*-14.399999 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 427
+[signals_width] 300
+[sst_expanded] 1
+[sst_vpaned_height] 656
+@28
+top.usb_clk
+@22
+top.payload[7:0]
+@28
+top.valid
+@200
+-
+@22
+top.status[3:0]
+@24
+top.length[1:0]
+@28
+top.fsm_state
+@24
+top.message_index[1:0]
+@c00023
++{message bytes} #{<Vector>} (0)top.$signal[7:0] (1)top.$signal[7:0] (2)top.$signal[7:0] (3)top.$signal[7:0] (4)top.$signal[7:0] (5)top.$signal[7:0] (6)top.$signal[7:0] (7)top.$signal[7:0] (0)top.$signal$1[7:0] (1)top.$signal$1[7:0] (2)top.$signal$1[7:0] (3)top.$signal$1[7:0] (4)top.$signal$1[7:0] (5)top.$signal$1[7:0] (6)top.$signal$1[7:0] (7)top.$signal$1[7:0] (0)top.$signal$2[7:0] (1)top.$signal$2[7:0] (2)top.$signal$2[7:0] (3)top.$signal$2[7:0] (4)top.$signal$2[7:0] (5)top.$signal$2[7:0] (6)top.$signal$2[7:0] (7)top.$signal$2[7:0]
+@1401201
+-group_end
+@200
+-
+@22
+top.address[7:0]
+top.data[7:0]
+[pattern_trace] 1
+[pattern_trace] 0
