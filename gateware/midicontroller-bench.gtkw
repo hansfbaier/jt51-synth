@@ -1,6 +1,6 @@
 [*]
 [*] GTKWave Analyzer v3.3.108 (w)1999-2020 BSI
-[*] Sun May 30 21:06:59 2021
+[*] Mon May 31 04:51:45 2021
 [*]
 [dumpfile] "midicontroller.vcd"
 [dumpfile_mtime] "Sun May 30 21:02:03 2021"
@@ -13,7 +13,7 @@
 [sst_width] 427
 [signals_width] 300
 [sst_expanded] 1
-[sst_vpaned_height] 656
+[sst_vpaned_height] 644
 @28
 top.usb_clk
 @22

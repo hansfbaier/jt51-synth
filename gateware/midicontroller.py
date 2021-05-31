@@ -76,24 +76,39 @@ class MIDIController(Elaboratable):
                     m.d.usb += [
                         message[message_index].eq(stream.payload),
                         message_index.eq(message_index + 1),
-                        # limit MIDI channels to 0-7
-                        address.eq(0x28 + (0xf & (stream.payload & 0b111)))
                     ]
 
-                    with m.If(message_index == 1):
-                        with m.Switch(stream.payload):
-                            for note in range(21, 109):
-                                with m.Case(note):
-                                    m.d.usb += data.eq(Cat(Const(midi_to_keycode[note % 12], 4), Const(((note // 12) - 1), 4)))
+                    with m.Switch(message_index):
+                        with m.Case(0):
+                            # limit MIDI channels to 0-7
+                            m.d.usb += address.eq(0x28 + (stream.payload & 0b111))
+                        with m.Case(1):
+                            with m.Switch(stream.payload):
+                                for note in range(13, 109):
+                                    with m.Case(note):
+                                        m.d.usb += data.eq(Cat(Const(midi_to_keycode[note % 12], 4), Const(((note // 12) - 1), 4)))
 
-                            with m.Default():
-                                m.d.usb += data.eq(0)
-
-                    with m.If(message_index == 2):
-                        m.next = "IDLE"
+                                with m.Default():
+                                    m.d.usb += data.eq(0)
+                        with m.Default():
+                            m.next = "IDLE"
 
             with m.State("NOTE_OFF"):
-                m.next = "WAIT_END"
+                with m.If(stream.valid):
+                    m.d.usb += [
+                        message[message_index].eq(stream.payload),
+                        message_index.eq(message_index + 1),
+                    ]
+
+                    with m.Switch(message_index):
+                        with m.Case(0):
+                            # limit MIDI channels to 0-7
+                            m.d.usb += address.eq(0x08)
+                            m.d.usb += data.eq(stream.payload & 0b111)
+                        with m.Case(1,2):
+                            pass
+                        with m.Default():
+                            m.next = "IDLE"
 
             with m.State("CONTROL_CHANGE"):
                 m.next = "WAIT_END"
