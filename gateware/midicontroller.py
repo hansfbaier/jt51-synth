@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from nmigen import *
+from nmigen.lib.fifo import AsyncFIFO
 from nmigen.cli import main
 from mido.messages.specs import SPEC_LOOKUP
 from luna.gateware.stream import StreamInterface
@@ -21,12 +22,15 @@ midi_to_keycode = {
 
 class MIDIController(Elaboratable):
     def __init__(self):
-        self.stream = StreamInterface(payload_width=8)
-        self.ports = [self.stream]
+        self.midi_stream = StreamInterface(payload_width=8)
+        self.jt51_stream = StreamInterface(payload_width=16)
+        self.ports = [self.midi_stream]
 
     def elaborate(self, platform):
         m      = Module()
-        stream = self.stream
+        midi_stream = self.midi_stream
+        output_fifo = AsyncFIFO(width=16, depth=16, r_domain="jt51", w_domain="usb")
+        m.submodules.output_fifo = output_fifo
 
         is_status = lambda name: SPEC_LOOKUP[name]['status_byte'] >> 4
         numbytes  = lambda name: SPEC_LOOKUP[name]['length']
@@ -44,11 +48,12 @@ class MIDIController(Elaboratable):
         # 0S SC DD DD, where S = Status, C = Channel, D = Data
         with m.FSM(domain="usb"):
             with m.State("IDLE"):
-                m.d.comb += stream.ready.eq(1)
+                m.d.comb += midi_stream.ready.eq(1)
+                m.d.usb += output_fifo.w_en.eq(0)
 
                 # All beginning bytes of MIDI messages have their MSB set
-                with m.If(stream.valid):
-                    m.d.comb += status.eq(stream.payload)
+                with m.If(midi_stream.valid):
+                    m.d.comb += status.eq(midi_stream.payload)
                     m.d.usb  += message_index.eq(0)
 
                     with m.Switch(status):
@@ -72,31 +77,42 @@ class MIDIController(Elaboratable):
                             m.next = "WAIT_END"
 
             with m.State("NOTE_ON"):
-                with m.If(stream.valid):
+                with m.If(midi_stream.valid):
                     m.d.usb += [
-                        message[message_index].eq(stream.payload),
+                        message[message_index].eq(midi_stream.payload),
                         message_index.eq(message_index + 1),
                     ]
 
                     with m.Switch(message_index):
                         with m.Case(0):
                             # limit MIDI channels to 0-7
-                            m.d.usb += address.eq(0x28 + (stream.payload & 0b111))
+                            m.d.usb += address.eq(0x28 + (midi_stream.payload & 0b111))
+
                         with m.Case(1):
-                            with m.Switch(stream.payload):
+                            with m.Switch(midi_stream.payload):
                                 for note in range(13, 109):
                                     with m.Case(note):
                                         m.d.usb += data.eq(Cat(Const(midi_to_keycode[note % 12], 4), Const(((note // 12) - 1), 4)))
-
                                 with m.Default():
                                     m.d.usb += data.eq(0)
+
+                        with m.Case(2):
+                            with m.If(output_fifo.w_rdy):
+                                m.d.usb += [
+                                    output_fifo.w_data.eq(Cat(data, address)),
+                                    output_fifo.w_en.eq(1),
+                                ]
+                            with m.Else():
+                                m.d.usb += output_fifo.w_en.eq(0)
+                            m.next = "IDLE"
+
                         with m.Default():
                             m.next = "IDLE"
 
             with m.State("NOTE_OFF"):
-                with m.If(stream.valid):
+                with m.If(midi_stream.valid):
                     m.d.usb += [
-                        message[message_index].eq(stream.payload),
+                        message[message_index].eq(midi_stream.payload),
                         message_index.eq(message_index + 1),
                     ]
 
@@ -104,9 +120,18 @@ class MIDIController(Elaboratable):
                         with m.Case(0):
                             # limit MIDI channels to 0-7
                             m.d.usb += address.eq(0x08)
-                            m.d.usb += data.eq(stream.payload & 0b111)
-                        with m.Case(1,2):
+                            m.d.usb += data.eq(midi_stream.payload & 0b111)
+                        with m.Case(1):
                             pass
+                        with m.Case(2):
+                            with m.If(output_fifo.w_rdy):
+                                m.d.usb += [
+                                    output_fifo.w_data.eq(Cat(data, address)),
+                                    output_fifo.w_en.eq(1),
+                                ]
+                            with m.Else():
+                                m.d.usb += output_fifo.w_en.eq(0)
+                            m.next = "IDLE"
                         with m.Default():
                             m.next = "IDLE"
 
@@ -120,7 +145,7 @@ class MIDIController(Elaboratable):
                 m.next = "WAIT_END"
 
             with m.State("WAIT_END"):
-                with m.If(~stream.valid):
+                with m.If(~midi_stream.valid):
                     m.next = "IDLE"
 
         return m
@@ -128,4 +153,4 @@ class MIDIController(Elaboratable):
 
 if __name__ == "__main__":
     m = MIDIController()
-    main(m, name="midicontroller", ports=[m.stream.valid, m.stream.payload])
+    main(m, name="midicontroller", ports=[m.midi_stream.valid, m.midi_stream.payload])

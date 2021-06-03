@@ -4,8 +4,8 @@ from nmigen.sim import Simulator, Tick
 
 if __name__ == "__main__":
     dut = MIDIController()
-    payload = dut.stream.payload
-    valid = dut.stream.valid
+    payload = dut.midi_stream.payload
+    valid = dut.midi_stream.valid
 
     def midi_message(*args, set_valid=True):
         if set_valid:
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     def usb_process():
         yield valid.eq(0)
         yield payload.eq(0)
-        yield dut.stream.ready.eq(1)
+        yield dut.midi_stream.ready.eq(1)
         yield Tick("usb")
         yield payload.eq(0x0b)
         yield Tick("usb")
