@@ -183,10 +183,32 @@ class VGMStreamReader:
                 break
             elif command == 0x67:
                 b = self._read("B")
-                pass
+                if b == 0x66:
+                    print(f"second byte should be 0x66 in a data block, but was: {b:02x}")
+                compression_type = self._read0("B")
+                size = self._read0("I")
+                print(f"======================== got data block of type {compression_type}  and size {size} ======================== ")
+                if compression_type & 0b11000000 == 0x80:
+                    datasize = self._read0("I")
+                    address = self._read0("I")
+                    print(f"ROM/RAM Image dump at address: 0x{address:08x} size: 0x{datasize:08x}")
+                    size -= 8
+                data = ""
+                for i in range(size):
+                    databyte = self._read0("B")
+                    data += f"{databyte:02x} "
+                    if i % 16 == 15:
+                        data +="\n"
+                print(data)
             elif command in range(0x70, 0x80):
                 samples = (command & 0xf) + 1
                 await player.wait_seconds(Fraction(samples, SAMPLE_RATE))
+            elif command == 0xc0:
+                addr_msb = self._read0("B")
+                addr_lsb = self._read0("B")
+                addr = addr_msb << 8 | addr_lsb
+                databyte = self._read0("B")
+                print(f"SEGA PCM write to {addr:04x}: {databyte:02x}")
             else:
                 raise NotImplementedError("Unknown VGM command {:#04x} at stream offset {}"
                                           .format(command, self._input.tell() - 1))
