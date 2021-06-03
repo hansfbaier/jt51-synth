@@ -6,18 +6,23 @@ import os
 from typing import Counter
 from luna.gateware import stream
 
-from nmigen              import Elaboratable, Module, Cat, Signal
+from nmigen              import Elaboratable, Module, Cat, ClockSignal, ResetSignal, DomainRenamer
 
 from luna                import top_level_cli
 from luna.usb2           import USBDevice, USBStreamInEndpoint, USBStreamOutEndpoint
 
 from luna.gateware.platform            import NullPin
 from luna.gateware.usb.usb2.request    import StallOnlyRequestHandler
+from nmigen.lib.fifo import AsyncFIFO
 
 from usb_protocol.types                import USBRequestType, USBDirection
 from usb_protocol.emitters             import DeviceDescriptorCollection
 from usb_protocol.types.descriptors    import uac
 from usb_protocol.emitters.descriptors import uac
+
+from jt51           import Jt51, Jt51Streamer
+from adat           import ADATTransmitter, EdgeToPulse
+from midicontroller import MIDIController
 
 class JT51Synth(Elaboratable):
     """ JT51 based FPGA synthesizer with USB MIDI """
@@ -131,14 +136,6 @@ class JT51Synth(Elaboratable):
         #)
         #usb.add_endpoint(ep1_in)
 
-        m.submodules.midicontroller = midicontroller = MIDIController()
-
-        leds = Cat(platform.request("led", i) for i in range(8))
-        with m.If(ep1_out.stream.valid):
-            m.d.usb += [
-                leds.eq(ep1_out.stream.payload),
-            ]
-
         #counter = Signal(24)
         #m.d.sync += [
         #    counter.eq(counter + 1),
@@ -154,11 +151,65 @@ class JT51Synth(Elaboratable):
             usb.full_speed_only  .eq(0),
         ]
 
+        m.submodules.midicontroller = midicontroller = MIDIController()
+        # connect USB to the MIDIController
+        m.d.usb += midicontroller.midi_stream.stream_eq(ep1_out.stream),
+
+        m.submodules.jt51instance = jt51instance = Jt51()
+        m.submodules.jt51streamer = jt51streamer = Jt51Streamer(jt51instance)
+        m.submodules.sample_valid = sample_valid = DomainRenamer("jt51")(EdgeToPulse())
+
+        adat = platform.request("adat")
+        m.submodules.adat_transmitter = adat_transmitter = ADATTransmitter()
+        m.submodules.adat_fifo = adat_fifo = AsyncFIFO(width=16+1, depth=32, r_domain="jt51", w_domain="fast")
+
+        # wire up jt51 and ADAT transmitter
+        m.d.comb += [
+            jt51instance.clk.eq(ClockSignal("jt51")),
+            jt51instance.rst.eq(ResetSignal("jt51")),
+            jt51instance.cs_n.eq(0),
+            jt51streamer.input_stream.stream_eq(midicontroller.jt51_stream),
+            sample_valid.edge_in.eq(jt51instance.sample),
+            adat.tx.eq(adat_transmitter.adat_out),
+        ]
+
+        # this state machine receives the audio from the JT51 and writes it into the ADAT FIFO
+        with m.FSM(domain="jt51", name="transmit_fsm"):
+            with m.State("IDLE"):
+                with m.If(sample_valid.pulse_out & adat_fifo.w_rdy):
+                    # FIFO-Layout: sample (Bits 0-15), channel (Bit 16)
+                    m.d.jt51 += [
+                        adat_fifo.w_data.eq(Cat(jt51instance.xleft, 0)),
+                        adat_fifo.w_en.eq(1)
+                    ]
+                    m.next = "LEFT_SAMPLE"
+            with m.State("LEFT_SAMPLE"):
+                with m.If(adat_fifo.w_rdy):
+                    m.d.jt51 += [
+                        adat_fifo.w_data.eq(Cat(jt51instance.xright, 1)),
+                        adat_fifo.w_en.eq(1)
+                    ]
+                    m.next = "RIGHT_SAMPLE"
+            with m.State("RIGHT_SAMPLE"):
+                m.d.jt51 += [
+                    adat_fifo.w_data.eq(0),
+                    adat_fifo.w_en.eq(0)
+                ]
+                m.next = "IDLE"
+
+        # make LEDs blink on incoming MIDI
+        leds = Cat(platform.request("led", i) for i in range(8))
+        with m.If(ep1_out.stream.valid):
+            m.d.usb += [
+                leds.eq(ep1_out.stream.payload),
+            ]
+
         return m
 
 if __name__ == "__main__":
-    os.environ["LUNA_PLATFORM"] = "jt51platform:JT51SynthPlatform"
-    #os.environ["LUNA_PLATFORM"] = "luna.gateware.platform.de0_nano:DE0NanoPlatform"
+    #os.environ["LUNA_PLATFORM"] = "jt51platform:JT51SynthPlatform"
+    # use DE0Nano temporarily for testing until I get the USB3320 board
+    os.environ["LUNA_PLATFORM"] = "de0nanoplatform:DE0NanoPlatform"
     e = JT51Synth()
     d = e.create_descriptors()
     descriptor_bytes = d.get_descriptor_bytes(2)
