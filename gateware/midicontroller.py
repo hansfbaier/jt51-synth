@@ -24,19 +24,33 @@ class MIDIController(Elaboratable):
     def __init__(self):
         self.midi_stream = StreamInterface(payload_width=8)
         self.jt51_stream = StreamInterface(payload_width=16)
-        self.ports = [self.midi_stream]
+
+    @staticmethod
+    def fifo_write(m, fifo, address, data):
+        with m.If(fifo.w_rdy):
+            m.d.usb += [
+                fifo.w_data.eq(Cat(data, address)),
+                fifo.w_en.eq(1),
+            ]
+        with m.Else():
+            m.d.usb += fifo.w_en.eq(0)
 
     def elaborate(self, platform):
-        m      = Module()
+        m = Module()
         midi_stream = self.midi_stream
         output_fifo = AsyncFIFO(width=16, depth=16, r_domain="jt51", w_domain="usb")
         m.submodules.output_fifo = output_fifo
+
+        m.d.comb += [
+            self.jt51_stream.payload.eq(output_fifo.r_data),
+            self.jt51_stream.valid.eq(output_fifo.r_rdy),
+            output_fifo.r_en.eq(self.jt51_stream.ready),
+        ]
 
         is_status = lambda name: SPEC_LOOKUP[name]['status_byte'] >> 4
         numbytes  = lambda name: SPEC_LOOKUP[name]['length']
 
         status  = Signal(4)
-        channel = Signal(4)
         length  = Signal(2)
         message = Array([Signal(8) for _ in range(3)])
         message_index = Signal(2)
@@ -92,18 +106,13 @@ class MIDIController(Elaboratable):
                             with m.Switch(midi_stream.payload):
                                 for note in range(13, 109):
                                     with m.Case(note):
-                                        m.d.usb += data.eq(Cat(Const(midi_to_keycode[note % 12], 4), Const(((note // 12) - 1), 4)))
+                                        m.d.usb += data.eq(Cat(Const(midi_to_keycode[note % 12], 4),
+                                                               Const(((note // 12) - 1), 4)))
                                 with m.Default():
                                     m.d.usb += data.eq(0)
 
                         with m.Case(2):
-                            with m.If(output_fifo.w_rdy):
-                                m.d.usb += [
-                                    output_fifo.w_data.eq(Cat(data, address)),
-                                    output_fifo.w_en.eq(1),
-                                ]
-                            with m.Else():
-                                m.d.usb += output_fifo.w_en.eq(0)
+                            self.fifo_write(m, output_fifo, address, data)
                             m.next = "IDLE"
 
                         with m.Default():
@@ -124,13 +133,7 @@ class MIDIController(Elaboratable):
                         with m.Case(1):
                             pass
                         with m.Case(2):
-                            with m.If(output_fifo.w_rdy):
-                                m.d.usb += [
-                                    output_fifo.w_data.eq(Cat(data, address)),
-                                    output_fifo.w_en.eq(1),
-                                ]
-                            with m.Else():
-                                m.d.usb += output_fifo.w_en.eq(0)
+                            self.fifo_write(m, output_fifo, address, data)
                             m.next = "IDLE"
                         with m.Default():
                             m.next = "IDLE"

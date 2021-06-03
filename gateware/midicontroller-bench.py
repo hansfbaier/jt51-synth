@@ -52,6 +52,9 @@ if __name__ == "__main__":
         yield from midi_message(0x83, 69, 0x00)
         yield Tick("usb")
         yield Tick("usb")
+        yield from midi_message(0x93, 60, 0x7f)
+        yield from midi_message(0x83, 60, 0x00)
+        yield Tick("usb")
         yield Tick("usb")
 
     sim = Simulator(dut)

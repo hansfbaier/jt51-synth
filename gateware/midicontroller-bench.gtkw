@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.108 (w)1999-2020 BSI
-[*] Mon May 31 05:31:50 2021
+[*] Mon May 31 05:44:57 2021
 [*]
 [dumpfile] "midicontroller.vcd"
-[dumpfile_mtime] "Sun May 30 21:02:03 2021"
-[dumpfile_size] 1582
+[dumpfile_mtime] "Mon May 31 05:42:45 2021"
+[dumpfile_size] 6576
 [savefile] "gateware/midicontroller-bench.gtkw"
-[timestart] 116900
-[size] 3830 2054
+[timestart] 0
+[size] 3818 2020
 [pos] -1 -1
-*-14.859332 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-15.459332 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [sst_width] 427
 [signals_width] 300
@@ -23,6 +23,7 @@ top.payload[7:0]
 top.valid
 @200
 -
+-MIDI Controller
 @22
 top.status[3:0]
 @24
@@ -42,11 +43,12 @@ top.address[7:0]
 top.data[7:0]
 @200
 -
+-Output FIFO
 @22
 top.output_fifo.w_data[15:0]
 @28
 top.output_fifo.w_en
-@23
+@22
 top.output_fifo.w_level[4:0]
 [pattern_trace] 1
 [pattern_trace] 0
