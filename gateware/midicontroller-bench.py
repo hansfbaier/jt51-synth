@@ -56,10 +56,25 @@ if __name__ == "__main__":
         yield from midi_message(0x83, 60, 0x00)
         yield Tick("usb")
         yield Tick("usb")
+        yield Tick("usb")
+        yield Tick("usb")
+        for _ in range(100):
+            yield Tick("usb")
+
+    def jt51_process():
+        yield Tick("jt51")
+        yield Tick("jt51")
+        yield Tick("jt51")
+        yield Tick("jt51")
+        yield dut.jt51_stream.ready.eq(1)
+        for _ in range(50):
+            yield Tick("jt51")
 
     sim = Simulator(dut)
     sim.add_clock(1.0/60e6, domain="usb")
+    sim.add_clock(1.0/3e6,  domain="jt51")
     sim.add_sync_process(usb_process, domain="usb")
+    sim.add_sync_process(jt51_process, domain="jt51")
 
     with sim.write_vcd(f'midicontroller.vcd'):
         sim.run()
