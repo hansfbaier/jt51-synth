@@ -39,7 +39,6 @@ class DE0NanoClockAndResetController(Elaboratable):
         # Create our domains; but don't do anything else for them, for now.
         m.domains.sync = ClockDomain()
         m.domains.usb  = ClockDomain()
-        m.domains.fast = ClockDomain()
         m.domains.jt51 = ClockDomain()
         m.domains.adat = ClockDomain()
 
@@ -71,21 +70,6 @@ class DE0NanoClockAndResetController(Elaboratable):
             # coming from the USB clock pin of the USB3300
             i_inclk  = ClockSignal("usb"),
             o_clk    = ClockSignal("jt51"),
-        )
-
-        m.submodules.fastpll = Instance("ALTPLL",
-            p_BANDWIDTH_TYPE         = "AUTO",
-            p_CLK0_DIVIDE_BY         = 60,
-            p_CLK0_DUTY_CYCLE        = 50,
-            p_CLK0_MULTIPLY_BY       = 10,
-            p_CLK0_PHASE_SHIFT       = 0,
-            p_INCLK0_INPUT_FREQUENCY = 16666,
-            p_OPERATION_MODE         = "NORMAL",
-
-            # Drive our clock from the USB clock
-            # coming from the USB clock pin of the USB3300
-            i_inclk  = ClockSignal("usb"),
-            o_clk    = ClockSignal("fast"),
         )
 
         m.submodules.adatpll = Instance("ALTPLL",

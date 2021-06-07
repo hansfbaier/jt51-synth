@@ -1,6 +1,7 @@
-from nmigen               import Elaboratable, Module, Cat, ClockSignal, ResetSignal, DomainRenamer
-from nmigen.hdl.ast       import Signal
-from nmigen.lib.fifo      import AsyncFIFO
+from nmigen          import Elaboratable, Module, Cat, ClockSignal, ResetSignal, DomainRenamer, ClockDomain
+from nmigen.hdl.ast  import Signal
+from nmigen.lib.fifo import AsyncFIFO
+from nmigen.cli      import main
 
 from luna.gateware.stream import StreamInterface
 
@@ -25,8 +26,8 @@ class SynthModule(Elaboratable):
         m.submodules.jt51streamer = jt51streamer = Jt51Streamer(jt51instance)
         m.submodules.sample_valid = sample_valid = DomainRenamer("jt51")(EdgeToPulse())
 
-        m.submodules.adat_transmitter = adat_transmitter = DomainRenamer("fast")(ADATTransmitter())
-        m.submodules.adat_fifo = adat_fifo = AsyncFIFO(width=16+1, depth=32, r_domain="jt51", w_domain="fast")
+        m.submodules.adat_transmitter = adat_transmitter = ADATTransmitter()
+        m.submodules.adat_fifo = adat_fifo = AsyncFIFO(width=16+1, depth=32, r_domain="jt51", w_domain="sync")
 
         # wire up jt51 and ADAT transmitter
         m.d.comb += [
@@ -64,17 +65,17 @@ class SynthModule(Elaboratable):
                 m.next = "IDLE"
 
         # FSM which writes the data from the adat_fifo into the ADAT transmitter
-        with m.FSM(domain="fast", name="transmit_fsm"):
+        with m.FSM(name="transmit_fsm"):
             with m.State("IDLE"):
                 with m.If(adat_fifo.r_rdy):
-                    m.d.fast += adat_fifo.r_en.eq(1)
+                    m.d.sync += adat_fifo.r_en.eq(1)
                     m.next = "TRANSFER"
 
             with m.State("TRANSFER"):
-                m.d.fast += adat_fifo.r_en.eq(0),
+                m.d.sync += adat_fifo.r_en.eq(0),
 
                 with m.If(adat_transmitter.ready_out):
-                    m.d.fast += [
+                    m.d.sync += [
                         adat_transmitter.sample_in.eq(adat_fifo.r_data[:8] << 8),
                         adat_transmitter.addr_in.eq(adat_fifo.r_data[8]),
                         adat_transmitter.last_in.eq(adat_fifo.r_data[8])
@@ -82,3 +83,7 @@ class SynthModule(Elaboratable):
                     m.next = "IDLE"
 
         return m
+
+if __name__ == "__main__":
+    m = SynthModule()
+    main(m, name="synthmodule", ports=[m.midi_stream.valid, m.midi_stream.payload, ClockSignal("adat")])
