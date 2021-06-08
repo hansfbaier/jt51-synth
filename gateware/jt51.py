@@ -32,11 +32,8 @@ class Jt51Streamer(Elaboratable):
 
         with m.FSM(domain="jt51"):
             with m.State("IDLE"):
-                m.d.jt51 += [
-                    jt51.wr_n.eq(1),
-                    # address comes always first
-                    jt51.a0.eq(0),
-                ]
+                # address comes always first
+                m.d.jt51 += jt51.a0.eq(0)
 
                 with m.If(valid & ~busy):
                     # read a FIFO entry
@@ -72,6 +69,7 @@ class Jt51Streamer(Elaboratable):
             # if data has been written, it takes one cycle
             # for the busy signal to appear
             with m.State("WAIT_ONE"):
+                m.d.jt51 += jt51.wr_n.eq(1)
                 m.next = "IDLE"
 
         return m
