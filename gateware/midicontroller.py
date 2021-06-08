@@ -26,12 +26,14 @@ class MIDIController(Elaboratable):
         self.jt51_stream = StreamInterface(payload_width=16)
 
     @staticmethod
-    def fifo_write(m, fifo, address, data):
+    def fifo_write(m, fifo, address, data, *, next_state):
         with m.If(fifo.w_rdy):
             m.d.usb += [
                 fifo.w_data.eq(Cat(data, address)),
                 fifo.w_en.eq(1),
             ]
+            m.next = next_state
+
         with m.Else():
             m.d.usb += fifo.w_en.eq(0)
 
@@ -100,23 +102,31 @@ class MIDIController(Elaboratable):
                     with m.Switch(message_index):
                         with m.Case(0):
                             # limit MIDI channels to 0-7
-                            m.d.usb += address.eq(0x28 + (midi_stream.payload & 0b111))
+                            channel_no = (midi_stream.payload & 0b111)
+                            # 0x28 = KEY CODE base address
+                            m.d.usb += address.eq(0x28 + channel_no)
 
                         with m.Case(1):
                             with m.Switch(midi_stream.payload):
                                 for note in range(13, 109):
                                     with m.Case(note):
-                                        m.d.usb += data.eq(Cat(Const(midi_to_keycode[note % 12], 4),
-                                                               Const(((note // 12) - 1), 4)))
+                                        keycode = Const(midi_to_keycode[note % 12], 4)
+                                        msb = Const(((note // 12) - 1), 4)
+                                        m.d.usb += data.eq(Cat(keycode, msb))
                                 with m.Default():
                                     m.d.usb += data.eq(0)
 
                         with m.Case(2):
-                            self.fifo_write(m, output_fifo, address, data)
-                            m.next = "IDLE"
+                            self.fifo_write(m, output_fifo, address, data, next_state="NOTE_ON_II")
 
                         with m.Default():
                             m.next = "IDLE"
+
+            with m.State("NOTE_ON_II"):
+                channel_no = (midi_stream.payload & 0b111)
+                # turn all oscillators on
+                c2_m2_c1_m1 = 0b1111
+                self.fifo_write(m, output_fifo, 0x08, (c2_m2_c1_m1 << 3) | channel_no, next_state="IDLE")
 
             with m.State("NOTE_OFF"):
                 with m.If(midi_stream.valid):
@@ -133,8 +143,7 @@ class MIDIController(Elaboratable):
                         with m.Case(1):
                             pass
                         with m.Case(2):
-                            self.fifo_write(m, output_fifo, address, data)
-                            m.next = "IDLE"
+                            self.fifo_write(m, output_fifo, address, data, next_state="IDLE")
                         with m.Default():
                             m.next = "IDLE"
 
