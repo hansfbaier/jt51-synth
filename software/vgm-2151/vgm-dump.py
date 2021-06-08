@@ -61,6 +61,12 @@ class TSVStreamPlayer(vgm.VGMStreamPlayer):
         elif address == 0x1b:
             wave = data & 0b11
             result = f"LFO WAVEFRM: {lfowaves[wave]}"
+        elif address & 0b11111000 == 0x20:
+            channel = 0x7 & address
+            conect = 0x7 & data
+            fb = (data >> 3) & 0x7
+            rl = (data >> 6) & 0x3
+            result += "????      : channel {}: RL: {} FB: {} CONECT: {}".format(channel, rl, fb, conect)
         elif address & 0xf8 == 0x28:
             channel = 0x7 & address
             note = data & 0xf
