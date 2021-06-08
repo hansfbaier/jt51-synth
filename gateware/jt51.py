@@ -9,7 +9,6 @@ class Jt51Streamer(Elaboratable):
 
     def elaborate(self, platform):
         m = Module()
-        #m.domains.jt51 = ClockDomain("jt51")
         jt51 = self.jt51
 
         ready   = Signal()
@@ -33,16 +32,26 @@ class Jt51Streamer(Elaboratable):
 
         with m.FSM(domain="jt51"):
             with m.State("IDLE"):
-                m.d.jt51 += jt51.wr_n.eq(1)
+                m.d.jt51 += [
+                    jt51.wr_n.eq(1),
+                    # address comes always first
+                    jt51.a0.eq(0),
+                ]
 
-                with m.If(self.input_stream.valid & ~busy):
+                with m.If(valid & ~busy):
                     # read a FIFO entry
                     m.d.jt51 += ready.eq(1)
-                    m.next = "WRITE_ADDRESS"
+                    m.next = "FIFO_READ"
+
+            with m.State("FIFO_READ"):
+                # in this cycle, ready is 1
+                # and the read values appear
+                # in the next cycle
+                m.d.jt51 += ready.eq(0)
+                m.next = "WRITE_ADDRESS"
 
             with m.State("WRITE_ADDRESS"):
                 m.d.jt51 += [
-                    jt51.a0.eq(0),
                     jt51.din.eq(address),
                     jt51.wr_n.eq(0),
                 ]
@@ -58,6 +67,11 @@ class Jt51Streamer(Elaboratable):
                     jt51.din.eq(data),
                     jt51.wr_n.eq(0),
                 ]
+                m.next = "WAIT_ONE"
+
+            # if data has been written, it takes one cycle
+            # for the busy signal to appear
+            with m.State("WAIT_ONE"):
                 m.next = "IDLE"
 
         return m
