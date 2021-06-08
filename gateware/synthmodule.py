@@ -34,11 +34,15 @@ class SynthModule(Elaboratable):
             jt51instance.clk.eq(ClockSignal("jt51")),
             jt51instance.rst.eq(ResetSignal("jt51")),
             jt51instance.cs_n.eq(0),
+            jt51instance.cen.eq(1),
             jt51streamer.input_stream.stream_eq(midicontroller.jt51_stream),
             sample_valid.edge_in.eq(jt51instance.sample),
             adat_transmitter.user_data_in.eq(0),
             self.adat_out.eq(adat_transmitter.adat_out),
         ]
+
+        # make cen_p1 half the JT51 clock speed
+        m.d.jt51 += jt51instance.cen_p1.eq(~jt51instance.cen_p1)
 
         # this state machine receives the audio from the JT51 and writes it into the ADAT FIFO
         with m.FSM(domain="jt51", name="jt51_to_adat_fifo_fsm"):
@@ -86,4 +90,4 @@ class SynthModule(Elaboratable):
 
 if __name__ == "__main__":
     m = SynthModule()
-    main(m, name="synthmodule", ports=[m.midi_stream.valid, m.midi_stream.payload, ClockSignal("adat")])
+    main(m, name="synthmodule", ports=[m.midi_stream.valid, m.midi_stream.payload, ClockSignal("adat"), ResetSignal("adat")])
