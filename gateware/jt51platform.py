@@ -20,9 +20,11 @@ class JT51SynthClockDomainGenerator(Elaboratable):
         m.domains.sync = ClockDomain()
         m.domains.usb  = ClockDomain()
         m.domains.fast = ClockDomain()
+        m.domains.jt51 = ClockDomain()
 
         main_clock = Signal()
         fast_clock = Signal()
+        jt51_clock = Signal()
         locked = Signal()
         feedback = Signal()
 
@@ -39,12 +41,16 @@ class JT51SynthClockDomainGenerator(Elaboratable):
             p_CLKOUT1_DIVIDE       = 12,  # 125MHz
             p_CLKOUT1_PHASE        = 0.000,
             p_CLKOUT1_DUTY_CYCLE   = 0.500,
+            p_CLKOUT2_DIVIDE       = 418,  # 3.59 MHz
+            p_CLKOUT2_PHASE        = 0.000,
+            p_CLKOUT2_DUTY_CYCLE   = 0.500,
             p_CLKIN1_PERIOD        = 20,
             i_CLKFBIN              = feedback,
             o_CLKFBOUT             = feedback,
             i_CLKIN1               = platform.request(platform.default_clk),
             o_CLKOUT0              = main_clock,
             o_CLKOUT1              = fast_clock,
+            o_CLKOUT2              = jt51_clock,
             o_LOCKED               = locked,
         )
 
@@ -55,7 +61,8 @@ class JT51SynthClockDomainGenerator(Elaboratable):
             led.eq(locked),
             ClockSignal("sync").eq(main_clock),
             ClockSignal("usb").eq(main_clock),
-            ClockSignal("fast").eq(fast_clock)
+            ClockSignal("fast").eq(fast_clock),
+            ClockSignal("jt51").eq(jt51_clock),
         ]
 
         return m
@@ -72,6 +79,40 @@ class JT51SynthPlatform(QMTechXC7A35TCorePlatform, LUNAPlatform):
                                  "set ulpi_inputs [get_ports -regexp ulpi.*(data|dir|nxt).*]\n" + \
                                  "set_input_delay -clock usb_clk -min 2 $ulpi_inputs\n" + \
                                  "set_input_delay -clock usb_clk -max 5 $ulpi_inputs\n"
+
+        jt51_files = [
+            "../gateware/jt51/hdl/filter/jt51_sincf.v",
+            "../gateware/jt51/hdl/filter/jt51_interpol.v",
+            "../gateware/jt51/hdl/filter/jt51_fir_ram.v",
+            "../gateware/jt51/hdl/filter/jt51_fir8.v",
+            "../gateware/jt51/hdl/filter/jt51_fir4.v",
+            "../gateware/jt51/hdl/filter/jt51_fir.v",
+            "../gateware/jt51/hdl/filter/jt51_dac2.v",
+            "../gateware/jt51/hdl/jt51_timers.v",
+            "../gateware/jt51/hdl/jt51_sh.v",
+            "../gateware/jt51/hdl/jt51_reg.v",
+            "../gateware/jt51/hdl/jt51_pm.v",
+            "../gateware/jt51/hdl/jt51_phrom.v",
+            "../gateware/jt51/hdl/jt51_phinc_rom.v",
+            "../gateware/jt51/hdl/jt51_pg.v",
+            "../gateware/jt51/hdl/jt51_op.v",
+            "../gateware/jt51/hdl/jt51_noise_lfsr.v",
+            "../gateware/jt51/hdl/jt51_noise.v",
+            "../gateware/jt51/hdl/jt51_mod.v",
+            "../gateware/jt51/hdl/jt51_mmr.v",
+            "../gateware/jt51/hdl/jt51_lin2exp.v",
+            "../gateware/jt51/hdl/jt51_lfo.v",
+            "../gateware/jt51/hdl/jt51_kon.v",
+            "../gateware/jt51/hdl/jt51_exprom.v",
+            "../gateware/jt51/hdl/jt51_exp2lin.v",
+            "../gateware/jt51/hdl/jt51_eg.v",
+            "../gateware/jt51/hdl/jt51_csr_op.v",
+            "../gateware/jt51/hdl/jt51_csr_ch.v",
+            "../gateware/jt51/hdl/jt51_acc.v",
+            "../gateware/jt51/hdl/jt51.v",
+        ]
+
+        plan.files['top.tcl'] = plan.files['top.tcl'].replace("add_files", "add_files " + " ".join(jt51_files))
 
         return plan
 
