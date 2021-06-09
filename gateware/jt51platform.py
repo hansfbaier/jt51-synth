@@ -25,7 +25,8 @@ class JT51SynthClockDomainGenerator(Elaboratable):
         main_clock = Signal()
         fast_clock = Signal()
         jt51_clock = Signal()
-        locked = Signal()
+
+        locked   = Signal()
         feedback = Signal()
 
         m.submodules.usb2_pll = Instance("PLLE2_ADV",
@@ -41,20 +42,31 @@ class JT51SynthClockDomainGenerator(Elaboratable):
             p_CLKOUT1_DIVIDE       = 12,  # 125MHz
             p_CLKOUT1_PHASE        = 0.000,
             p_CLKOUT1_DUTY_CYCLE   = 0.500,
-            p_CLKOUT2_DIVIDE       = 418,  # 3.59 MHz
-            p_CLKOUT2_PHASE        = 0.000,
-            p_CLKOUT2_DUTY_CYCLE   = 0.500,
             p_CLKIN1_PERIOD        = 20,
             i_CLKFBIN              = feedback,
             o_CLKFBOUT             = feedback,
             i_CLKIN1               = platform.request(platform.default_clk),
             o_CLKOUT0              = main_clock,
             o_CLKOUT1              = fast_clock,
-            o_CLKOUT2              = jt51_clock,
             o_LOCKED               = locked,
         )
 
         led = platform.request("led")
+
+        jt51_counter = Signal(6)
+        # we need 3.59 MHz for the jt51
+        # so we divide 125 MHz by 35
+        # error: 125/35/3.59-1 = 0.005173
+        m.d.fast += [
+            jt51_counter.eq(jt51_counter + 1)
+        ]
+        with m.If(jt51_counter == 34):
+            m.d.fast += [
+                jt51_counter.eq(0),
+                jt51_clock.eq(1)
+            ]
+        with m.Elif(jt51_counter == 17):
+            m.d.fast += jt51_clock.eq(0)
 
         # Connect up our clock domains.
         m.d.comb += [
@@ -77,8 +89,8 @@ class JT51SynthPlatform(QMTechXC7A35TCorePlatform, LUNAPlatform):
                                  "set_output_delay -clock usb_clk 5 $ulpi_out\n" + \
                                  "set_output_delay -clock usb_clk -1 -min $ulpi_out\n" + \
                                  "set ulpi_inputs [get_ports -regexp ulpi.*(data|dir|nxt).*]\n" + \
-                                 "set_input_delay -clock usb_clk -min 2 $ulpi_inputs\n" + \
-                                 "set_input_delay -clock usb_clk -max 5 $ulpi_inputs\n"
+                                 "set_input_delay -clock usb_clk -min 1 $ulpi_inputs\n" + \
+                                 "set_input_delay -clock usb_clk -max 3.5 $ulpi_inputs\n"
 
         jt51_files = [
             "../gateware/jt51/hdl/filter/jt51_sincf.v",
