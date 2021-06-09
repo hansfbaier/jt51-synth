@@ -33,7 +33,11 @@ class Jt51Streamer(Elaboratable):
         with m.FSM(domain="jt51"):
             with m.State("IDLE"):
                 # address comes always first
-                m.d.jt51 += jt51.a0.eq(0)
+                m.d.jt51 += [
+                    jt51.wr_n.eq(1),
+                    # address comes always first
+                    jt51.a0.eq(0),
+                ]
 
                 with m.If(valid & ~busy):
                     # read a FIFO entry
