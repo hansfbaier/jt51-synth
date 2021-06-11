@@ -137,6 +137,7 @@ class JT51SynthPlatform(QMTechXC7A35TCorePlatform, LUNAPlatform):
                 data="J_2:28 J_2:26 J_2:24 J_2:22 J_2:20 J_2:18 J_2:16 J_2:14",
                 clk="J_2:9", # this needs to be a clock pin of the FPGA or the core won't work
                 dir="J_2:17", nxt="J_2:15", stp="J_2:13", rst="J_2:19", clk_dir="o",
+                rst_invert=True, # USB3320 reset is active low
                 attrs=Attrs(IOSTANDARD="LVCMOS33", SLEW="FAST")),
 
             Resource("debug_led", 0, Pins("J_2:34", dir="o"), Attrs(IOSTANDARD="LVCMOS33")),
