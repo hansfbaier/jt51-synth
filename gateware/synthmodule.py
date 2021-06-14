@@ -80,9 +80,9 @@ class SynthModule(Elaboratable):
 
                 with m.If(adat_transmitter.ready_out):
                     m.d.sync += [
-                        adat_transmitter.sample_in.eq(adat_fifo.r_data[:8] << 8),
-                        adat_transmitter.addr_in.eq(adat_fifo.r_data[8]),
-                        adat_transmitter.last_in.eq(adat_fifo.r_data[8])
+                        adat_transmitter.sample_in.eq(adat_fifo.r_data[:16] << 8),
+                        adat_transmitter.addr_in.eq(adat_fifo.r_data[16]),
+                        adat_transmitter.last_in.eq(adat_fifo.r_data[16])
                     ]
                     m.next = "IDLE"
 
