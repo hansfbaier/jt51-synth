@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.109 (w)1999-2020 BSI
-[*] Thu Jun 17 02:46:21 2021
+[*] Thu Jun 17 03:57:59 2021
 [*]
 [dumpfile] "obj_dir/synthmodule.fst"
-[dumpfile_mtime] "Thu Jun 17 02:35:00 2021"
-[dumpfile_size] 2700874
+[dumpfile_mtime] "Thu Jun 17 03:57:57 2021"
+[dumpfile_size] 1621513
 [savefile] "synthmodule.gtkw"
-[timestart] 785893
+[timestart] 17910
 [size] 3828 2090
 [pos] -1 -1
-*-7.086712 1594000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-13.954531 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.synthmodule.
 [treeopen] TOP.synthmodule.adat_transmitter.
@@ -17,9 +17,9 @@
 [treeopen] TOP.synthmodule.jt51instance.U$$0.u_eg.
 [treeopen] TOP.synthmodule.midicontroller.
 [sst_width] 561
-[signals_width] 390
+[signals_width] 435
 [sst_expanded] 1
-[sst_vpaned_height] 945
+[sst_vpaned_height] 943
 @28
 TOP.jt51_rst
 @200
@@ -38,6 +38,8 @@ TOP.synthmodule.jt51streamer.payload[15:0]
 @28
 TOP.synthmodule.jt51streamer.ready
 TOP.synthmodule.jt51streamer.valid
+@23
+TOP.synthmodule.midicontroller.output_fifo.r_level[6:0]
 @200
 -JT51Streamer
 @28
@@ -86,7 +88,7 @@ TOP.synthmodule.adat_fifo.w_level[5:0]
 @24
 TOP.synthmodule.adat_fifo.w_level[5:0]
 TOP.synthmodule.adat_fifo.r_level[5:0]
-@23
+@22
 TOP.synthmodule.adat_fifo.r_data[16:0]
 @28
 TOP.synthmodule.adat_fifo.r_rdy
@@ -95,9 +97,24 @@ TOP.synthmodule.adat_fifo.r_en
 -ADAT Transmitter
 @28
 TOP.synthmodule.adat_transmitter.clk
+TOP.synthmodule.adat_transmitter.valid_in
+TOP.synthmodule.adat_transmitter.addr_in[2:0]
+@22
+TOP.synthmodule.adat_transmitter.sample_in[23:0]
+@28
+TOP.synthmodule.adat_transmitter.ready_out
+TOP.synthmodule.adat_transmitter.last_in
+@200
+-Transmit FIFO
+@28
+TOP.synthmodule.adat_transmitter.transmit_fifo_w_rdy
+TOP.synthmodule.adat_transmitter.transmit_fifo_w_en
 @22
 TOP.synthmodule.adat_transmitter.channel0[23:0]
 TOP.synthmodule.adat_transmitter.channel1[23:0]
+@24
+TOP.synthmodule.adat_transmitter.transmit_fifo.w_level[2:0]
+TOP.synthmodule.adat_transmitter.transmit_fifo.r_level[2:0]
 @28
 TOP.synthmodule.adat_transmitter.adat_rst
 TOP.synthmodule.adat_transmitter.adat_clk
