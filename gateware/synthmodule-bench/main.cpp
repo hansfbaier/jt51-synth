@@ -50,13 +50,10 @@ const uint8_t note_on[3]  = { 0x93, 0x70 /* 69 */, 0x7f },
 bool completed_changed(uint8_t completed)
 {
     static uint8_t last_completed = 0xff;
-    if (last_completed != completed) {
-        last_completed = completed;
-        return true;
-    }
 
+    bool result = completed != last_completed;
     last_completed = completed;
-    return false;
+    return result;
 }
 
 
@@ -99,7 +96,10 @@ int main(int argc, char** argv) {
             if (tfp) tfp->dump (main_time);
 
             uint8_t completed = uint8_t (main_time * 100 / max_time);
-            if (completed_changed(completed)) VL_PRINTF("%d%% ", completed);
+            if (completed_changed(completed)) {
+                VL_PRINTF("%d%% ", completed);
+                fflush(stdout);
+            }
         }
 
         main_time++;
