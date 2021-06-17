@@ -44,8 +44,21 @@ bool send_midi(uint32_t num_cycles, const uint8_t *msg, vluint64_t time)
     return false;
 }
 
-const uint8_t note_on[3]  = { 0x93, 69, 0x7f },
-              note_off[3] = { 0x83, 69, 0x00 };
+const uint8_t note_on[3]  = { 0x93, 0x70 /* 69 */, 0x7f },
+              note_off[3] = { 0x83, 0x70 /* 69 */, 0x00 };
+
+bool completed_changed(uint8_t completed)
+{
+    static uint8_t last_completed = 0xff;
+    if (last_completed != completed) {
+        last_completed = completed;
+        return true;
+    }
+
+    last_completed = completed;
+    return false;
+}
+
 
 int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
@@ -58,13 +71,15 @@ int main(int argc, char** argv) {
     top->trace (tfp, 99);	// Trace 99 levels of hierarchy
     tfp->open ("synthmodule.fst");
 
+    VL_PRINTF("Verilating...\n");
+
     top->usb_rst  = 1;
     top->adat_rst = 1;
     top->jt51_rst = 1;
     top->synthmodule__02Erst = 1;
     top->eval();
 
-    const vluint64_t max_time = 2000000;
+    const vluint64_t max_time = 3000000;
 
     while (main_time < max_time) {
         bool needs_eval = false;
@@ -82,6 +97,9 @@ int main(int argc, char** argv) {
         if (needs_eval) {
             top->eval();
             if (tfp) tfp->dump (main_time);
+
+            uint8_t completed = uint8_t (main_time * 100 / max_time);
+            if (completed_changed(completed)) VL_PRINTF("%d%% ", completed);
         }
 
         main_time++;
@@ -89,7 +107,7 @@ int main(int argc, char** argv) {
 
     if (tfp) tfp->close();
     top->final();
-    VL_PRINTF("done!\n");
+    VL_PRINTF("\ndone!\n");
 
     delete top;
 }
