@@ -27,7 +27,7 @@ class SynthModule(Elaboratable):
         m.submodules.sample_valid = sample_valid = DomainRenamer("jt51")(EdgeToPulse())
 
         m.submodules.adat_transmitter = adat_transmitter = ADATTransmitter()
-        m.submodules.adat_fifo = adat_fifo = AsyncFIFO(width=16+1, depth=32, r_domain="jt51", w_domain="sync")
+        m.submodules.adat_fifo = adat_fifo = AsyncFIFO(width=16+1, depth=32, w_domain="jt51", r_domain="sync")
 
         # wire up jt51 and ADAT transmitter
         m.d.comb += [
@@ -90,4 +90,4 @@ class SynthModule(Elaboratable):
 
 if __name__ == "__main__":
     m = SynthModule()
-    main(m, name="synthmodule", ports=[m.midi_stream.valid, m.midi_stream.payload, ClockSignal("adat"), ResetSignal("adat")])
+    main(m, name="synthmodule", ports=[m.midi_stream.valid, m.midi_stream.payload, ClockSignal("adat"), ResetSignal("adat"), m.adat_out])
