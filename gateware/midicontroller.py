@@ -40,7 +40,7 @@ class MIDIController(Elaboratable):
     def elaborate(self, platform):
         m = Module()
         midi_stream = self.midi_stream
-        output_fifo = AsyncFIFO(width=16, depth=16, r_domain="jt51", w_domain="usb")
+        output_fifo = AsyncFIFO(width=16, depth=64, w_domain="usb", r_domain="jt51")
         m.submodules.output_fifo = output_fifo
 
         m.d.comb += [
@@ -63,6 +63,28 @@ class MIDIController(Elaboratable):
         # USB channel messages come in groups of four bytes:
         # 0S SC DD DD, where S = Status, C = Channel, D = Data
         with m.FSM(domain="usb"):
+            with m.State("INIT"):
+                init_counter = Signal(10)
+                m.d.usb += init_counter.eq(init_counter + 1)
+                with m.If(init_counter[9]):
+                    m.next = "INIT_CHANNELS"
+
+            with m.State("INIT_CHANNELS"):
+                self.fifo_write(m, output_fifo, 0x20, 0xfa, next_state="INIT_ENVELOPES")
+
+            with m.State("INIT_ENVELOPES"):
+                envelope_addr = Signal(8, reset=0x60)
+                m.d.usb += envelope_addr.eq(envelope_addr + 8)
+                with m.If(envelope_addr <= 0x78):
+                    self.fifo_write(m, output_fifo, envelope_addr, Const(0x1f, shape=8), next_state="INIT_ENVELOPES")
+                    with m.If(envelope_addr == 0x78):
+                        m.d.usb += envelope_addr.eq(0x80)
+                with m.Elif(envelope_addr <= 0x98):
+                    self.fifo_write(m, output_fifo, envelope_addr, Const(0x1f, shape=8), next_state="INIT_ENVELOPES")
+                with m.Else():
+                    m.d.usb += output_fifo.w_en.eq(0)
+                    m.next = "IDLE"
+
             with m.State("IDLE"):
                 m.d.comb += midi_stream.ready.eq(1)
                 m.d.usb += output_fifo.w_en.eq(0)

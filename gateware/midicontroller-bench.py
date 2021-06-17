@@ -22,6 +22,8 @@ if __name__ == "__main__":
             yield valid.eq(0)
 
     def usb_process():
+        for _ in range(2**10):
+            yield Tick("usb")
         yield valid.eq(0)
         yield payload.eq(0)
         yield dut.midi_stream.ready.eq(1)
