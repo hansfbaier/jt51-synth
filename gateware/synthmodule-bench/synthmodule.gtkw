@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.109 (w)1999-2020 BSI
-[*] Thu Jun 17 03:57:59 2021
+[*] Fri Jun 18 23:51:58 2021
 [*]
-[dumpfile] "obj_dir/synthmodule.fst"
-[dumpfile_mtime] "Thu Jun 17 03:57:57 2021"
-[dumpfile_size] 1621513
-[savefile] "synthmodule.gtkw"
-[timestart] 17910
+[dumpfile] "synthmodule-bench/obj_dir/synthmodule.fst"
+[dumpfile_mtime] "Fri Jun 18 23:51:57 2021"
+[dumpfile_size] 748667
+[savefile] "synthmodule-bench/synthmodule.gtkw"
+[timestart] 0
 [size] 3828 2090
 [pos] -1 -1
-*-13.954531 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-16.298075 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.synthmodule.
 [treeopen] TOP.synthmodule.adat_transmitter.
@@ -38,7 +38,7 @@ TOP.synthmodule.jt51streamer.payload[15:0]
 @28
 TOP.synthmodule.jt51streamer.ready
 TOP.synthmodule.jt51streamer.valid
-@23
+@22
 TOP.synthmodule.midicontroller.output_fifo.r_level[6:0]
 @200
 -JT51Streamer
@@ -73,7 +73,7 @@ TOP.synthmodule.jt51instance.U$$0.cen_p1
 TOP.synthmodule.jt51instance.cs_n
 TOP.synthmodule.jt51streamer.busy
 TOP.synthmodule.jt51instance.sample
-@10022
+@8421
 TOP.synthmodule.jt51instance.xleft[15:0]
 TOP.synthmodule.jt51instance.xright[15:0]
 @200
@@ -109,11 +109,12 @@ TOP.synthmodule.adat_transmitter.last_in
 @28
 TOP.synthmodule.adat_transmitter.transmit_fifo_w_rdy
 TOP.synthmodule.adat_transmitter.transmit_fifo_w_en
-@22
+@420
 TOP.synthmodule.adat_transmitter.channel0[23:0]
 TOP.synthmodule.adat_transmitter.channel1[23:0]
-@24
+@8024
 TOP.synthmodule.adat_transmitter.transmit_fifo.w_level[2:0]
+@24
 TOP.synthmodule.adat_transmitter.transmit_fifo.r_level[2:0]
 @28
 TOP.synthmodule.adat_transmitter.adat_rst

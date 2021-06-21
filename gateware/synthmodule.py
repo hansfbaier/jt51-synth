@@ -74,6 +74,8 @@ class SynthModule(Elaboratable):
         # FSM which writes the data from the adat_fifo into the ADAT transmitter
         with m.FSM(name="transmit_fsm"):
             with m.State("IDLE"):
+                m.d.sync += adat_transmitter.valid_in.eq(0)
+
                 with m.If(adat_fifo.r_rdy):
                     m.d.sync += adat_fifo.r_en.eq(1)
                     m.next = "TRANSFER"
@@ -83,6 +85,7 @@ class SynthModule(Elaboratable):
 
                 with m.If(adat_transmitter.ready_out):
                     m.d.sync += [
+                        adat_transmitter.valid_in.eq(1),
                         adat_transmitter.sample_in.eq(adat_fifo.r_data[:16] << 8),
                         adat_transmitter.addr_in.eq(adat_fifo.r_data[16]),
                         adat_transmitter.last_in.eq(adat_fifo.r_data[16])
