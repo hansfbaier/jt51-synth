@@ -23,9 +23,12 @@ class JT51SynthClockDomainGenerator(Elaboratable):
 
         clk = platform.request(platform.default_clk)
 
-        clocks = Signal(3)
-        locked = Signal()
-        adat_clock = Signal()
+        sys_clocks   = Signal(2)
+        sound_clocks = Signal(2)
+
+        sys_locked   = Signal()
+        sound_locked = Signal()
+        reset       = Signal()
 
         m.submodules.mainpll = Instance("ALTPLL",
             p_BANDWIDTH_TYPE         = "AUTO",
@@ -39,16 +42,6 @@ class JT51SynthClockDomainGenerator(Elaboratable):
             p_CLK1_DUTY_CYCLE        = 50,
             p_CLK1_MULTIPLY_BY       = 6,
             p_CLK1_PHASE_SHIFT       = 0,
-            # 3.579545 MHz
-            #p_CLK2_DIVIDE_BY         = 251,
-            #p_CLK2_DUTY_CYCLE        = 50,
-            #p_CLK2_MULTIPLY_BY       = 18,
-            #p_CLK2_PHASE_SHIFT       = 0,
-            # 3.067484662576687 MHz => 48 kHz out
-            p_CLK2_MULTIPLY_BY       = 23,
-            p_CLK2_DIVIDE_BY         = 375,
-            p_CLK2_DUTY_CYCLE        = 50,
-            p_CLK2_PHASE_SHIFT       = 0,
 
             p_INCLK0_INPUT_FREQUENCY = 20000,
             p_OPERATION_MODE         = "NORMAL",
@@ -56,36 +49,44 @@ class JT51SynthClockDomainGenerator(Elaboratable):
             # Drive our clock from the USB clock
             # coming from the USB clock pin of the USB3300
             i_inclk  = clk,
-            o_clk    = clocks,
-            o_locked = locked,
+            o_clk    = sys_clocks,
+            o_locked = sys_locked,
         )
 
         adat_locked = Signal()
-        m.submodules.adatpll = Instance("ALTPLL",
+        m.submodules.soundpll = Instance("ALTPLL",
             p_BANDWIDTH_TYPE         = "AUTO",
+            # ADAT clock = 12.288 MHz = 48 kHz * 256
             p_CLK0_DIVIDE_BY         = 83,
             p_CLK0_DUTY_CYCLE        = 50,
             p_CLK0_MULTIPLY_BY       = 17,
             p_CLK0_PHASE_SHIFT       = 0,
+            # 3.072 MHz = 48kHz * 64 (1 sample takes 64 JT51 cycles)
+            p_CLK1_DIVIDE_BY         = 4 * 83,
+            p_CLK1_DUTY_CYCLE        = 50,
+            p_CLK1_MULTIPLY_BY       = 17,
+            p_CLK1_PHASE_SHIFT       = 0,
 
             p_INCLK0_INPUT_FREQUENCY = 16667,
             p_OPERATION_MODE         = "NORMAL",
 
-            i_inclk  = clocks[1],
-            o_clk    = ClockSignal("adat"),
-            o_locked = adat_locked,
+            i_inclk  = sys_clocks[1],
+            o_clk    = sound_clocks,
+            o_locked = sound_locked,
         )
 
         m.d.comb += [
-            ClockSignal("fast").eq(clocks[0]),
-            ClockSignal("usb").eq(clocks[1]),
-            ClockSignal("sync").eq(clocks[1]),
-            ClockSignal("jt51").eq(clocks[2]),
-            ResetSignal("fast").eq(~locked),
-            ResetSignal("usb").eq(~locked),
-            ResetSignal("sync").eq(~locked),
-            ResetSignal("jt51").eq(~locked),
-            ResetSignal("adat").eq(~adat_locked),
+            reset.eq(~(sys_locked & sound_locked)),
+            ClockSignal("fast").eq(sys_clocks[0]),
+            ClockSignal("usb") .eq(sys_clocks[1]),
+            ClockSignal("sync").eq(sys_clocks[1]),
+            ClockSignal("jt51").eq(sound_clocks[1]),
+            ClockSignal("adat").eq(sound_clocks[0]),
+            ResetSignal("fast").eq(reset),
+            ResetSignal("usb") .eq(reset),
+            ResetSignal("sync").eq(reset),
+            ResetSignal("jt51").eq(reset),
+            ResetSignal("adat").eq(reset),
         ]
 
         ground = platform.request("ground")

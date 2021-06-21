@@ -11,8 +11,8 @@ vluint64_t main_time = 0;       // Current simulation time
 // used in Verilog (or from --timescale-override)
 
 const int usb_period  = 16,
-          adat_period = 81,
-          jt51_period = 279;
+          adat_period = 81,     // ADAT clock = 256 bit * 48kHz sample rate
+          jt51_period = 81 * 4; // 64 JT51 clock = 1 sample @ 48kHz
 
 double sc_time_stamp() {        // Called by $time in Verilog
     return main_time;           // converts to double, to match
