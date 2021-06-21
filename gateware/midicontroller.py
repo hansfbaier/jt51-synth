@@ -134,7 +134,7 @@ class MIDIController(Elaboratable):
                                 for note in range(13, 109):
                                     with m.Case(note):
                                         keycode = Const(midi_to_keycode[note % 12], 4)
-                                        msb = Const(((note // 12) - 1), 4)
+                                        msb = Const((((note - 1) // 12) - 1), 4)
                                         m.d.usb += data.eq(Cat(keycode, msb))
                                 with m.Default():
                                     m.d.usb += data.eq(0)
