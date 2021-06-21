@@ -47,6 +47,7 @@ class MIDIController(Elaboratable):
             self.jt51_stream.payload.eq(output_fifo.r_data),
             self.jt51_stream.valid.eq(output_fifo.r_rdy),
             output_fifo.r_en.eq(self.jt51_stream.ready),
+            midi_stream.ready.eq(output_fifo.w_rdy),
         ]
 
         is_status = lambda name: SPEC_LOOKUP[name]['status_byte'] >> 4
