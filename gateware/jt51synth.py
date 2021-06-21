@@ -4,13 +4,15 @@
 # SPDX-License-Identifier: MIT
 import os
 
-from nmigen              import Elaboratable, Module, Cat, ClockSignal, ResetSignal, DomainRenamer
+from nmigen              import Elaboratable, Module, Signal, Cat
 
 from luna                import top_level_cli
 from luna.usb2           import USBDevice, USBStreamInEndpoint, USBStreamOutEndpoint
 
 from luna.gateware.platform            import NullPin
 from luna.gateware.usb.usb2.request    import StallOnlyRequestHandler
+
+from nmigen.hdl.ast import ClockSignal, ResetSignal
 
 from usb_protocol.types                import USBRequestType, USBDirection
 from usb_protocol.emitters             import DeviceDescriptorCollection
@@ -21,7 +23,7 @@ from synthmodule import SynthModule
 
 class JT51Synth(Elaboratable):
     """ JT51 based FPGA synthesizer with USB MIDI, TopLevel Module """
-    MAX_PACKET_SIZE = 512
+    MAX_PACKET_SIZE = 512 #64 #512
 
     def create_descriptors(self):
         """ Creates the descriptors that describe our MIDI topology. """
@@ -131,18 +133,13 @@ class JT51Synth(Elaboratable):
         #)
         #usb.add_endpoint(ep1_in)
 
-        #counter = Signal(24)
-        #m.d.sync += [
-        #    counter.eq(counter + 1),
-        #    led.eq(counter[20])
-        #]
-
         # Always accept data as it comes in.
         m.d.usb += ep1_out.stream.ready.eq(1)
 
+        connect_button = platform.request("button", 0)
         # Connect our device as a high speed device
         m.d.comb += [
-            usb.connect          .eq(1),
+            usb.connect          .eq(~connect_button),
             usb.full_speed_only  .eq(0),
         ]
 
@@ -151,21 +148,17 @@ class JT51Synth(Elaboratable):
         m.d.usb  += synthmodule.midi_stream.stream_eq(ep1_out.stream),
         m.d.comb += adat.tx.eq(synthmodule.adat_out)
 
+        leds = Cat(platform.request("debug_led", i) for i in range(4, 8))
+
         # make LEDs blink on incoming MIDI
-        leds = Cat(platform.request("led", i) for i in range(8))
         with m.If(ep1_out.stream.valid):
-            m.d.usb += [
-                leds.eq(ep1_out.stream.payload),
-            ]
+            m.d.usb += leds.eq(ep1_out.stream.payload[3:7])
 
         return m
 
 if __name__ == "__main__":
     #os.environ["LUNA_PLATFORM"] = "jt51platform:JT51SynthPlatform"
+    os.environ["LUNA_PLATFORM"] = "qmtech_ep4ce15_platform:JT51SynthPlatform"
     # use DE0Nano temporarily for testing until I get the USB3320 board
-    os.environ["LUNA_PLATFORM"] = "de0nanoplatform:DE0NanoPlatform"
-    e = JT51Synth()
-    d = e.create_descriptors()
-    descriptor_bytes = d.get_descriptor_bytes(2)
-    print(f"descriptor length: {len(descriptor_bytes)} bytes: {str(descriptor_bytes.hex())}")
+    #os.environ["LUNA_PLATFORM"] = "de0nanoplatform:DE0NanoPlatform"
     top_level_cli(JT51Synth)
