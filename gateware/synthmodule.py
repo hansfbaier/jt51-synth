@@ -39,9 +39,9 @@ class SynthModule(Elaboratable):
             sample_valid.edge_in.eq(jt51instance.sample),
             adat_transmitter.user_data_in.eq(0),
             self.adat_out.eq(adat_transmitter.adat_out),
-            platform.request("debug_led", 0).eq(midicontroller.midi_stream.ready),
-            platform.request("debug_led", 1).eq(adat_fifo.w_rdy),
-            platform.request("debug_led", 2).eq(adat_transmitter.ready_out),
+            platform.request("debug_led", 0).eq(~midicontroller.midi_stream.ready),
+            platform.request("debug_led", 1).eq(~adat_fifo.w_rdy),
+            platform.request("debug_led", 2).eq(~adat_transmitter.ready_out),
         ]
 
         # make cen_p1 half the JT51 clock speed
