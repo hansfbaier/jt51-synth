@@ -7,6 +7,14 @@ if __name__ == "__main__":
     payload = dut.midi_stream.payload
     valid = dut.midi_stream.valid
 
+    def sysex(*args):
+        yield valid.eq(1)
+        for byte in args:
+            yield payload.eq(byte)
+            yield Tick("usb")
+        yield payload.eq(0)
+        yield valid.eq(0)
+
     def midi_message(*args, set_valid=True):
         if set_valid:
             yield valid.eq(1)
@@ -22,7 +30,7 @@ if __name__ == "__main__":
             yield valid.eq(0)
 
     def usb_process():
-        for _ in range(2**10):
+        for _ in range(2**10 - 200):
             yield Tick("usb")
         yield valid.eq(0)
         yield payload.eq(0)
@@ -60,7 +68,11 @@ if __name__ == "__main__":
         yield Tick("usb")
         yield Tick("usb")
         yield Tick("usb")
-        for _ in range(100):
+        for _ in range(128):
+            yield Tick("usb")
+        # send USB MIDI sysex
+        yield from sysex(0x04, 0xf0, 0x20, 0x08, 0x06, 0x78, 0xf7, 0x00)
+        for _ in range(40):
             yield Tick("usb")
 
     def jt51_process():

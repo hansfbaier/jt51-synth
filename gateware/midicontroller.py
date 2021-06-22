@@ -56,14 +56,14 @@ class MIDIController(Elaboratable):
         status  = Signal(4)
         length  = Signal(2)
         message = Array([Signal(8) for _ in range(3)])
-        message_index = Signal(2)
+        message_index = Signal(3)
 
         address = Signal(8)
         data    = Signal(8)
 
         # USB channel messages come in groups of four bytes:
         # 0S SC DD DD, where S = Status, C = Channel, D = Data
-        with m.FSM(domain="usb"):
+        with m.FSM(domain="usb") as fsm:
             with m.State("INIT"):
                 init_counter = Signal(10)
                 m.d.usb += init_counter.eq(init_counter + 1)
@@ -112,6 +112,9 @@ class MIDIController(Elaboratable):
                             m.d.usb += length.eq(numbytes('pitchwheel'))
                             m.next = "PITCH_WHEEL"
 
+                        with m.Case(0x04):
+                            m.next = "SYSEX"
+
                         with m.Default():
                             m.next = "WAIT_END"
 
@@ -143,7 +146,7 @@ class MIDIController(Elaboratable):
                             self.fifo_write(m, output_fifo, address, data, next_state="NOTE_ON_II")
 
                         with m.Default():
-                            m.next = "IDLE"
+                            m.next = "WAIT_END"
 
             with m.State("NOTE_ON_II"):
                 channel_no = (midi_stream.payload & 0b111)
@@ -168,7 +171,7 @@ class MIDIController(Elaboratable):
                         with m.Case(2):
                             self.fifo_write(m, output_fifo, address, data, next_state="IDLE")
                         with m.Default():
-                            m.next = "IDLE"
+                            m.next = "WAIT_END"
 
             with m.State("CONTROL_CHANGE"):
                 m.next = "WAIT_END"
@@ -178,6 +181,32 @@ class MIDIController(Elaboratable):
 
             with m.State("PITCH_WHEEL"):
                 m.next = "WAIT_END"
+
+            # use sysex to directly send address/data pairs to the JT51
+            # first sysex byte:  address
+            # second sysex byte: data
+            with m.State("SYSEX"):
+                with m.If(midi_stream.valid):
+                    m.d.usb += message_index.eq(message_index + 1)
+
+                    with m.Switch(message_index):
+                        with m.Case(0, 1):
+                            m.next = "SYSEX"
+                        with m.Case(2):
+                            m.d.usb += address.eq(midi_stream.payload)
+                        with m.Case(3):
+                            with m.If(midi_stream.payload != 0x06):
+                                m.next = "WAIT_END"
+                        with m.Case(4):
+                            m.d.usb += data.eq(midi_stream.payload)
+                        with m.Case(5):
+                            with m.If(midi_stream.payload == 0xf7):
+                                # after this still comes a 0-byte, which we skip
+                                self.fifo_write(m, output_fifo, address, data, next_state="WAIT_END")
+                            with m.Else():
+                                m.next = "WAIT_END"
+                        with m.Default():
+                            m.next = "WAIT_END"
 
             with m.State("WAIT_END"):
                 with m.If(~midi_stream.valid):

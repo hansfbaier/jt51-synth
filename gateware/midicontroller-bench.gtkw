@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.109 (w)1999-2020 BSI
-[*] Thu Jun 17 01:14:12 2021
+[*] Tue Jun 22 02:27:16 2021
 [*]
 [dumpfile] "midicontroller.vcd"
-[dumpfile_mtime] "Thu Jun 17 01:12:24 2021"
-[dumpfile_size] 44477
+[dumpfile_mtime] "Tue Jun 22 02:26:40 2021"
+[dumpfile_size] 43703
 [savefile] "gateware/midicontroller-bench.gtkw"
-[timestart] 8122000
+[timestart] 16042700
 [size] 3828 2090
 [pos] -1 -1
-*-19.494749 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-16.118868 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.output_fifo.
 [sst_width] 427
@@ -31,10 +31,10 @@ top.valid$1
 top.status[3:0]
 @24
 top.length[1:0]
+@25
+top.message_index[2:0]
 @28
 top.fsm_state
-@24
-top.message_index[1:0]
 @c00022
 +{message bytes} #{<Vector>} (0)top.$signal[7:0] (1)top.$signal[7:0] (2)top.$signal[7:0] (3)top.$signal[7:0] (4)top.$signal[7:0] (5)top.$signal[7:0] (6)top.$signal[7:0] (7)top.$signal[7:0] (0)top.$signal$1[7:0] (1)top.$signal$1[7:0] (2)top.$signal$1[7:0] (3)top.$signal$1[7:0] (4)top.$signal$1[7:0] (5)top.$signal$1[7:0] (6)top.$signal$1[7:0] (7)top.$signal$1[7:0] (0)top.$signal$2[7:0] (1)top.$signal$2[7:0] (2)top.$signal$2[7:0] (3)top.$signal$2[7:0] (4)top.$signal$2[7:0] (5)top.$signal$2[7:0] (6)top.$signal$2[7:0] (7)top.$signal$2[7:0]
 @1401200
@@ -60,9 +60,8 @@ top.output_fifo.w_data[15:0]
 top.output_fifo.w_en
 @200
 -Output Stream
-@23
-top.output_fifo.r_level[6:0]
 @22
+top.output_fifo.r_level[6:0]
 top.payload[15:0]
 @28
 top.valid
