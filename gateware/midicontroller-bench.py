@@ -71,7 +71,7 @@ if __name__ == "__main__":
         for _ in range(128):
             yield Tick("usb")
         # send USB MIDI sysex
-        yield from sysex(0x04, 0xf0, 0x20, 0x08, 0x06, 0x78, 0xf7, 0x00)
+        yield from sysex(0x04, 0xf0, 0x0a, 0x0b, 0x07, 0x0c, 0x0d, 0xf7)
         for _ in range(40):
             yield Tick("usb")
 
