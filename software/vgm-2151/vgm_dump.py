@@ -1,7 +1,8 @@
+#!/usr/bin/env python3
 import sys
 import gzip
 import asyncio
-import vgm
+from glasgow.protocol import vgm
 
 lfowaves = {
     0: "SAW",
@@ -30,10 +31,19 @@ onoff = {
     1: "ON "
 }
 
-class TSVStreamPlayer(vgm.VGMStreamPlayer):
-    def __init__(self, file):
-        self.file = file
+opmap = {
+    0: 1,
+    1: 3,
+    2: 2,
+    3: 4,
+}
 
+def channel_env(paramno):
+    channel = paramno % 8
+    op = paramno // 8
+    return f"ch{channel}-op{opmap[op]}"
+
+class TSVStreamPlayer(vgm.VGMStreamPlayer):
     async def ym2151_write(self, address, data):
         result = ""
         if address == 0x08:
@@ -59,14 +69,9 @@ class TSVStreamPlayer(vgm.VGMStreamPlayer):
             value = data & 0x7f
             result = f"{modulation_type}   : {value}"
         elif address == 0x1b:
+            ct = data >> 6
             wave = data & 0b11
-            result = f"LFO WAVEFRM: {lfowaves[wave]}"
-        elif address & 0b11111000 == 0x20:
-            channel = 0x7 & address
-            conect = 0x7 & data
-            fb = (data >> 3) & 0x7
-            rl = (data >> 6) & 0x3
-            result += "????      : channel {}: RL: {} FB: {} CONECT: {}".format(channel, rl, fb, conect)
+            result = f"LFO WAVEFRM: {lfowaves[wave]} CT: {bin(ct)}"
         elif address & 0xf8 == 0x28:
             channel = 0x7 & address
             note = data & 0xf
@@ -74,10 +79,10 @@ class TSVStreamPlayer(vgm.VGMStreamPlayer):
             result = "KEY CODE   : CHANNEL {}: OCTAVE: {} NOTE: {}".format(channel, octave, notes[note])
         elif address & 0b11111000 == 0x20:
             operator = address & 0x7
-            rl = data >> 6
+            rl = bin(data >> 6)
             feedback = (data >> 3) & 0x7
             connection = data & 0x7
-            result = f"OPERATOR {operator} : CONNECTION: {connection} FEEDBACK: {feedback} (RL): {rl}"
+            result = f"OPERATOR {operator} : CONNECTION: {connection} FEEDBACK: {feedback} RL: {rl}"
         elif address & 0xf8 == 0x38:
             operator = address & 0b111
             am_sensitivity = 0x3 & data
@@ -91,17 +96,17 @@ class TSVStreamPlayer(vgm.VGMStreamPlayer):
             envelope = address & 0x1f
             detune1 = (data >> 4) & 0x7
             phase_multiply = data & 0xf
-            result += "PHASEGEN {:02d}: DETUNE1: {:02d}".format(envelope, detune1)
+            result += "PHASEGEN {}: DETUNE1: {:02d}".format(channel_env(envelope), detune1)
             result += " PHASE MULTIPLY: {:02d}".format(phase_multiply)
         elif address & 0x60 == 0x60:
             envelope = address & 0x1f
             level = data &  0x7f
-            result = "ENVELOPE {:02d}: TOTAL LEVEL : {}".format(envelope, level)
+            result = "ENVELOPE {}: TOTAL LEVEL : {}".format(channel_env(envelope), level)
         elif address & 0xe0 == 0x80:
             envelope = address & 0x1f
             keyscaling = data >> 6
             attack_rate = data & 0b11111
-            result = "ENVELOPE {:02d}: ".format(envelope)
+            result = "ENVELOPE {}: ".format(channel_env(envelope))
             if attack_rate > 0:
                 result += "ATTACK RATE: {:02d}".format(envelope, attack_rate)
             if keyscaling > 0:
@@ -110,19 +115,19 @@ class TSVStreamPlayer(vgm.VGMStreamPlayer):
             envelope = address & 0x1f
             first_decay_rate = data & 0b11111
             am_sensitivity_en = data >> 7
-            result = "ENVELOPE {:02d}: DECAY1 RATE: {:02d}".format(envelope, first_decay_rate)
+            result = "ENVELOPE {}: DECAY1 RATE: {:02d}".format(channel_env(envelope), first_decay_rate)
             result += " AM SENSITIVITY ENABLE: {}".format(am_sensitivity_en)
         elif address & 0xc0 == 0xc0:
             envelope = address & 0x1f
             detune2 = data >> 6
             second_decay_rate = data & 0b11111
-            result += "ENVELOPE {:02d}: DECAY2 RATE: {:02d}".format(envelope, second_decay_rate)
-            result += " PHASEGEN {:02d}: DETUNE2: {:02d}".format(envelope, detune2)
+            result += "ENVELOPE {}: DECAY2 RATE: {:02d}".format(channel_env(envelope), second_decay_rate)
+            result += " PHASEGEN {}: DETUNE2: {:02d}".format(channel_env(envelope), detune2)
         elif address & 0xe0 == 0xe0:
             envelope = address & 0x1f
             release_rate = data & 0xf
             decay1_level = (data >> 4) & 0xf
-            result = "ENVELOPE {:02d}:".format(envelope)
+            result = "ENVELOPE {}:".format(channel_env(envelope))
             if decay1_level > 0:
                 result += " DECAY1 LEVEL: {:02d}".format(decay1_level)
             if release_rate > 0:
@@ -135,6 +140,12 @@ class TSVStreamPlayer(vgm.VGMStreamPlayer):
     async def wait_seconds(self, duration):
         print(f"({duration*1e6:.0f})")
 
-reader = vgm.VGMStreamReader(gzip.GzipFile("test.vgz", "rb"))
-player = TSVStreamPlayer(None)
-asyncio.run(reader.parse_data(player))
+if __name__ == "__main__":
+    arg = sys.argv[1]
+    if arg.endswith(".vgz"):
+        reader = vgm.VGMStreamReader(gzip.GzipFile(arg, "rb"))
+        player = TSVStreamPlayer()
+        asyncio.run(reader.parse_data(player))
+    else:
+        print("Unrecognized format!")
+        exit(1)
