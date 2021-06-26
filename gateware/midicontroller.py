@@ -2,8 +2,8 @@
 from nmigen import *
 from nmigen.lib.fifo import AsyncFIFO
 from nmigen.cli import main
+from nmigen_library.stream import StreamInterface
 from mido.messages.specs import SPEC_LOOKUP
-from luna.gateware.stream import StreamInterface
 
 midi_to_keycode = {
     1:   0,  # C#

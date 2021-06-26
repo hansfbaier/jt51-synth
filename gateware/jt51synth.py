@@ -148,12 +148,6 @@ class JT51Synth(Elaboratable):
         m.d.usb  += synthmodule.midi_stream.stream_eq(ep1_out.stream),
         m.d.comb += adat.tx.eq(synthmodule.adat_out)
 
-        leds = Cat(platform.request("debug_led", i) for i in range(4, 8))
-
-        # make LEDs blink on incoming MIDI
-        with m.If(ep1_out.stream.valid):
-            m.d.usb += leds.eq(ep1_out.stream.payload[3:7])
-
         return m
 
 if __name__ == "__main__":

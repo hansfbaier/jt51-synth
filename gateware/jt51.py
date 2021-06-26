@@ -1,6 +1,6 @@
-from nmigen              import Elaboratable, Module, Signal, Instance, ClockDomain
-from luna.gateware.stream import StreamInterface
+from nmigen         import Elaboratable, Module, Signal, Instance, ClockDomain
 from nmigen.hdl.ast import ResetSignal
+from nmigen_library.stream import StreamInterface
 
 class Jt51Streamer(Elaboratable):
     def __init__(self, jt51) -> None:
