@@ -9,4 +9,12 @@ More coming soon.
 Before using this repository, be sure to initialize the git submodules:
 
 $ git submodule init
+
 $ git submodule update
+
+## Status
+Basic monophonic playability over MIDI on one voice.
+python VGM music player script over MIDI sysex works.
+Currently only tested working with the QMTech EP4CE15 platform.
+
+https://twitter.com/hansfbaier/status/1407493769348280320
