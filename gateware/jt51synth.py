@@ -23,7 +23,9 @@ from synthmodule import SynthModule
 
 class JT51Synth(Elaboratable):
     """ JT51 based FPGA synthesizer with USB MIDI, TopLevel Module """
-    MAX_PACKET_SIZE = 512 #64 #512
+    MAX_PACKET_SIZE = 512
+    # we currently do not need MIDI feedback from the synth
+    with_midi_in = False
 
     def create_descriptors(self):
         """ Creates the descriptors that describe our MIDI topology. """
@@ -49,22 +51,22 @@ class JT51Synth(Elaboratable):
         with descriptors.ConfigurationDescriptor() as configDescr:
             interface = uac.StandardMidiStreamingInterfaceDescriptorEmitter()
             interface.bInterfaceNumber = 0
-            interface.bNumEndpoints = 1 # 2
+            interface.bNumEndpoints = 2 if self.with_midi_in else 1
             configDescr.add_subordinate_descriptor(interface)
 
             streamingInterface = uac.ClassSpecificMidiStreamingInterfaceDescriptorEmitter()
 
-            # prevent the descriptor from getting too large, see https://github.com/greatscottgadgets/luna/issues/86
-            #outToHostJack = uac.MidiOutJackDescriptorEmitter()
-            #outToHostJack.bJackID = 1
-            #outToHostJack.bJackType = uac.MidiStreamingJackTypes.EMBEDDED
-            #outToHostJack.add_source(2)
-            #streamingInterface.add_subordinate_descriptor(outToHostJack)
-#
-            #inToDeviceJack = uac.MidiInJackDescriptorEmitter()
-            #inToDeviceJack.bJackID = 2
-            #inToDeviceJack.bJackType = uac.MidiStreamingJackTypes.EXTERNAL
-            #streamingInterface.add_subordinate_descriptor(inToDeviceJack)
+            if self.with_midi_in:
+                outToHostJack = uac.MidiOutJackDescriptorEmitter()
+                outToHostJack.bJackID = 1
+                outToHostJack.bJackType = uac.MidiStreamingJackTypes.EMBEDDED
+                outToHostJack.add_source(2)
+                streamingInterface.add_subordinate_descriptor(outToHostJack)
+
+                inToDeviceJack = uac.MidiInJackDescriptorEmitter()
+                inToDeviceJack.bJackID = 2
+                inToDeviceJack.bJackType = uac.MidiStreamingJackTypes.EXTERNAL
+                streamingInterface.add_subordinate_descriptor(inToDeviceJack)
 
             inFromHostJack = uac.MidiInJackDescriptorEmitter()
             inFromHostJack.bJackID = 3
@@ -86,15 +88,15 @@ class JT51Synth(Elaboratable):
             outMidiEndpoint.add_associated_jack(3)
             streamingInterface.add_subordinate_descriptor(outMidiEndpoint)
 
-            # prevent the descriptor from getting too large, see https://github.com/greatscottgadgets/luna/issues/86
-            #inEndpoint = uac.StandardMidiStreamingDataEndpointDescriptorEmitter()
-            #inEndpoint.bEndpointAddress = USBDirection.IN.from_endpoint_address(1)
-            #inEndpoint.wMaxPacketSize = self.MAX_PACKET_SIZE
-            #streamingInterface.add_subordinate_descriptor(inEndpoint)
-#
-            #inMidiEndpoint = uac.ClassSpecificMidiStreamingBulkDataEndpointDescriptorEmitter()
-            #inMidiEndpoint.add_associated_jack(1)
-            #streamingInterface.add_subordinate_descriptor(inMidiEndpoint)
+            if self.with_midi_in:
+                inEndpoint = uac.StandardMidiStreamingDataEndpointDescriptorEmitter()
+                inEndpoint.bEndpointAddress = USBDirection.IN.from_endpoint_address(1)
+                inEndpoint.wMaxPacketSize = self.MAX_PACKET_SIZE
+                streamingInterface.add_subordinate_descriptor(inEndpoint)
+
+                inMidiEndpoint = uac.ClassSpecificMidiStreamingBulkDataEndpointDescriptorEmitter()
+                inMidiEndpoint.add_associated_jack(1)
+                streamingInterface.add_subordinate_descriptor(inMidiEndpoint)
 
             configDescr.add_subordinate_descriptor(streamingInterface)
 
@@ -127,11 +129,12 @@ class JT51Synth(Elaboratable):
         )
         usb.add_endpoint(ep1_out)
 
-        #ep1_in = USBStreamInEndpoint(
-        #    endpoint_number=1, # EP 1 IN
-        #    max_packet_size=self.MAX_PACKET_SIZE
-        #)
-        #usb.add_endpoint(ep1_in)
+        if self.with_midi_in:
+            ep1_in = USBStreamInEndpoint(
+                endpoint_number=1, # EP 1 IN
+                max_packet_size=self.MAX_PACKET_SIZE
+            )
+            usb.add_endpoint(ep1_in)
 
         # Always accept data as it comes in.
         m.d.usb += ep1_out.stream.ready.eq(1)
