@@ -61,10 +61,13 @@ class JT51SynthClockDomainGenerator(Elaboratable):
             p_CLK0_DUTY_CYCLE        = 50,
             p_CLK0_MULTIPLY_BY       = 17,
             p_CLK0_PHASE_SHIFT       = 0,
-            # 3.072 MHz = 48kHz * 64 (1 sample takes 64 JT51 cycles)
-            p_CLK1_DIVIDE_BY         = 4 * 83,
+            # 56 kHz output sample rate is about 2 cents off of A=440Hz
+            # but at least we have a frequency a PLL can generate without
+            # a dedicated 3.579545 MHz NTSC crystal
+            # 3.584 MHz = 56kHz * 64 (1 sample takes 64 JT51 cycles)
+            p_CLK1_DIVIDE_BY         = 318,
             p_CLK1_DUTY_CYCLE        = 50,
-            p_CLK1_MULTIPLY_BY       = 17,
+            p_CLK1_MULTIPLY_BY       = 19,
             p_CLK1_PHASE_SHIFT       = 0,
 
             p_INCLK0_INPUT_FREQUENCY = 16667,

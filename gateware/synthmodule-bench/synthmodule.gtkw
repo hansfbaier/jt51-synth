@@ -1,6 +1,6 @@
 [*]
 [*] GTKWave Analyzer v3.3.109 (w)1999-2020 BSI
-[*] Fri Jun 18 23:51:58 2021
+[*] Wed Jun 30 02:36:28 2021
 [*]
 [dumpfile] "synthmodule-bench/obj_dir/synthmodule.fst"
 [dumpfile_mtime] "Fri Jun 18 23:51:57 2021"
@@ -9,14 +9,14 @@
 [timestart] 0
 [size] 3828 2090
 [pos] -1 -1
-*-16.298075 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-17.489233 793800 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.synthmodule.
-[treeopen] TOP.synthmodule.adat_transmitter.
 [treeopen] TOP.synthmodule.jt51instance.U$$0.
 [treeopen] TOP.synthmodule.jt51instance.U$$0.u_eg.
 [treeopen] TOP.synthmodule.midicontroller.
-[sst_width] 561
+[treeopen] TOP.synthmodule.resampler_left.
+[sst_width] 606
 [signals_width] 435
 [sst_expanded] 1
 [sst_vpaned_height] 943
@@ -38,8 +38,6 @@ TOP.synthmodule.jt51streamer.payload[15:0]
 @28
 TOP.synthmodule.jt51streamer.ready
 TOP.synthmodule.jt51streamer.valid
-@22
-TOP.synthmodule.midicontroller.output_fifo.r_level[6:0]
 @200
 -JT51Streamer
 @28
@@ -73,33 +71,48 @@ TOP.synthmodule.jt51instance.U$$0.cen_p1
 TOP.synthmodule.jt51instance.cs_n
 TOP.synthmodule.jt51streamer.busy
 TOP.synthmodule.jt51instance.sample
-@8421
+@8420
 TOP.synthmodule.jt51instance.xleft[15:0]
 TOP.synthmodule.jt51instance.xright[15:0]
 @200
--ADAT FIFO
-@22
-TOP.synthmodule.adat_fifo.w_data[16:0]
+-Left FIFO
 @28
-TOP.synthmodule.adat_fifo.w_en
-TOP.synthmodule.adat_fifo.w_full
-@8022
-TOP.synthmodule.adat_fifo.w_level[5:0]
+TOP.synthmodule.audio_fifo_left.w_en
+TOP.synthmodule.audio_fifo_left.w_rdy
+@420
+TOP.synthmodule.audio_fifo_left.w_data[15:0]
+TOP.synthmodule.audio_fifo_left.r_data[15:0]
+@28
+TOP.synthmodule.audio_fifo_left.r_rdy
+TOP.synthmodule.audio_fifo_left.r_en
+@200
+-Right FIFO
+@28
+TOP.synthmodule.audio_fifo_right.r_rdy
+TOP.synthmodule.audio_fifo_right.r_en
+@200
+-Resamplers
+@28
+TOP.synthmodule.resampler_left.input_ready
+TOP.synthmodule.resampler_left.input_valid
+@420
+TOP.synthmodule.resampler_left.input_data[15:0]
 @24
-TOP.synthmodule.adat_fifo.w_level[5:0]
-TOP.synthmodule.adat_fifo.r_level[5:0]
-@22
-TOP.synthmodule.adat_fifo.r_data[16:0]
+TOP.synthmodule.resampler_left.downsample_counter[2:0]
 @28
-TOP.synthmodule.adat_fifo.r_rdy
-TOP.synthmodule.adat_fifo.r_en
+TOP.synthmodule.resampler_left.downsamplefifo_w_en
+TOP.synthmodule.resampler_left.downsamplefifo_w_rdy
+TOP.synthmodule.resampler_left.downsamplefifo_r_en
+TOP.synthmodule.resampler_left.downsamplefifo_r_rdy
+TOP.synthmodule.resampler_left.ready
 @200
 -ADAT Transmitter
 @28
 TOP.synthmodule.adat_transmitter.clk
 TOP.synthmodule.adat_transmitter.valid_in
+@24
 TOP.synthmodule.adat_transmitter.addr_in[2:0]
-@22
+@8420
 TOP.synthmodule.adat_transmitter.sample_in[23:0]
 @28
 TOP.synthmodule.adat_transmitter.ready_out
@@ -109,12 +122,12 @@ TOP.synthmodule.adat_transmitter.last_in
 @28
 TOP.synthmodule.adat_transmitter.transmit_fifo_w_rdy
 TOP.synthmodule.adat_transmitter.transmit_fifo_w_en
-@420
+@8420
 TOP.synthmodule.adat_transmitter.channel0[23:0]
 TOP.synthmodule.adat_transmitter.channel1[23:0]
 @8024
 TOP.synthmodule.adat_transmitter.transmit_fifo.w_level[2:0]
-@24
+@8025
 TOP.synthmodule.adat_transmitter.transmit_fifo.r_level[2:0]
 @28
 TOP.synthmodule.adat_transmitter.adat_rst

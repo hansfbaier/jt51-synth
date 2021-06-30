@@ -139,7 +139,7 @@ class JT51Synth(Elaboratable):
         # Always accept data as it comes in.
         m.d.usb += ep1_out.stream.ready.eq(1)
 
-        connect_button = platform.request("button", 0)
+        connect_button = 0 #platform.request("button", 0)
         # Connect our device as a high speed device
         m.d.comb += [
             usb.connect          .eq(~connect_button),
