@@ -33,10 +33,14 @@ class SynthModule(Elaboratable):
         m.submodules.audio_fifo_right = audio_fifo_right = \
             AsyncFIFO(width=16, depth=8, w_domain="jt51", r_domain="sync")
 
+        filter_stages = 4
+        cutoff_frequency = 20e3
         m.submodules.resampler_left = resampler_left = FractionalResampler(
-            input_samplerate=56e3, upsample_factor=6, downsample_factor=7)
+            input_samplerate=56e3, upsample_factor=6, downsample_factor=7,
+            filter_instances=filter_stages, filter_cutoff=cutoff_frequency, bitwidth=16, prescale=4)
         m.submodules.resampler_right = resampler_right = FractionalResampler(
-            input_samplerate=56e3, upsample_factor=6, downsample_factor=7)
+            input_samplerate=56e3, upsample_factor=6, downsample_factor=7,
+            filter_instances=filter_stages, filter_cutoff=cutoff_frequency, bitwidth=16, prescale=4)
 
         #m.submodules.adat_fifo = adat_fifo = SyncFIFO(width=16+1, depth=16)
         m.submodules.adat_transmitter = adat_transmitter = ADATTransmitter()
