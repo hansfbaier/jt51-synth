@@ -20,6 +20,9 @@ class SynthModule(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
+        #
+        # Set up submodules
+        #
         m.submodules.midicontroller = midicontroller = MIDIController()
         # connect USB to the MIDIController
         m.d.usb += midicontroller.midi_stream.stream_eq(self.midi_stream),
@@ -28,21 +31,20 @@ class SynthModule(Elaboratable):
         m.submodules.jt51streamer = jt51streamer = Jt51Streamer(jt51instance)
         m.submodules.sample_valid = jt51_sample_valid = DomainRenamer("jt51")(EdgeToPulse())
 
+        bitwidth = 16
         m.submodules.audio_fifo_left  = audio_fifo_left  = \
-            AsyncFIFO(width=16, depth=8, w_domain="jt51", r_domain="sync")
+            AsyncFIFO(width=bitwidth, depth=8, w_domain="jt51", r_domain="sync")
         m.submodules.audio_fifo_right = audio_fifo_right = \
-            AsyncFIFO(width=16, depth=8, w_domain="jt51", r_domain="sync")
+            AsyncFIFO(width=bitwidth, depth=8, w_domain="jt51", r_domain="sync")
 
-        filter_stages = 4
         cutoff_frequency = 20e3
         m.submodules.resampler_left = resampler_left = FractionalResampler(
             input_samplerate=56e3, upsample_factor=6, downsample_factor=7,
-            filter_instances=filter_stages, filter_cutoff=cutoff_frequency, bitwidth=16, prescale=4)
+            filter_cutoff=cutoff_frequency, bitwidth=bitwidth, prescale=4)
         m.submodules.resampler_right = resampler_right = FractionalResampler(
             input_samplerate=56e3, upsample_factor=6, downsample_factor=7,
-            filter_instances=filter_stages, filter_cutoff=cutoff_frequency, bitwidth=16, prescale=4)
+            filter_cutoff=cutoff_frequency, bitwidth=bitwidth, prescale=4)
 
-        #m.submodules.adat_fifo = adat_fifo = SyncFIFO(width=16+1, depth=16)
         m.submodules.adat_transmitter = adat_transmitter = ADATTransmitter()
 
         # wire up jt51
@@ -83,7 +85,7 @@ class SynthModule(Elaboratable):
         connect_fifo_to_stream(m, audio_fifo_left,  resampler_left.signal_in)
         connect_fifo_to_stream(m, audio_fifo_right, resampler_right.signal_in)
 
-        # FSM which writes the data from the adat_fifo into the ADAT transmitter
+        # FSM which writes the data from the resamplers into the ADAT transmitter
         with m.FSM(name="transmit_fsm"):
             left_channel  = resampler_left.signal_out
             right_channel = resampler_right.signal_out
