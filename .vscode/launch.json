@@ -5,6 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: generate verilog",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "generate", "-t", "v", "gateware/synthmodule-bench/synthmodule.v"
+            ]
+        },
+        {
             "name": "Python: Generate Gateware",
             "type": "python",
             "request": "launch",
