@@ -97,7 +97,6 @@ class USBMIDI(Elaboratable):
     def elaborate(self, platform: Platform) -> Module:
         m = Module()
 
-        # Create our USB-to-serial converter.
         ulpi = platform.request(platform.default_usb_connection)
         m.submodules.usb = usb = USBDevice(bus=ulpi)
 
