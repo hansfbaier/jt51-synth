@@ -2,7 +2,7 @@
 import sys
 import gzip
 import asyncio
-from glasgow.protocol import vgm
+import vgm
 
 lfowaves = {
     0: "SAW",

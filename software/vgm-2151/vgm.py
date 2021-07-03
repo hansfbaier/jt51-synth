@@ -204,8 +204,8 @@ class VGMStreamReader:
                 samples = (command & 0xf) + 1
                 await player.wait_seconds(Fraction(samples, SAMPLE_RATE))
             elif command == 0xc0:
-                addr_msb = self._read0("B")
                 addr_lsb = self._read0("B")
+                addr_msb = self._read0("B")
                 addr = addr_msb << 8 | addr_lsb
                 databyte = self._read0("B")
                 print(f"SEGA PCM write to {addr:04x}: {databyte:02x}")
