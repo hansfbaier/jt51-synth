@@ -123,10 +123,11 @@ class USBMIDI(Elaboratable):
             usb.add_endpoint(ep1_in)
 
         connect_button = 0 #platform.request("button", 0)
-        # Connect our device as a high speed device
         m.d.comb += [
             usb.connect          .eq(~connect_button),
+            # Connect our device as a high speed device
             usb.full_speed_only  .eq(0),
+            self.stream_out.stream_eq(ep1_out.stream)
         ]
 
         return m
