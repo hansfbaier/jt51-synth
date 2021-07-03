@@ -2,12 +2,12 @@
 #
 # Copyright (c) 2021 Hans Baier <hansfbaier@gmail.com>
 # SPDX-License-Identifier: MIT
-from usbmidi import USBMIDI
 import os
 
-from nmigen          import Elaboratable, Module, Signal, Cat
-from nmigen.hdl.ast  import ClockSignal, ResetSignal
+from nmigen          import Elaboratable, Module
 from luna            import top_level_cli
+
+from usbmidi         import USBMIDI
 from synthmodule     import SynthModule
 
 class JT51Synth(Elaboratable):
@@ -17,12 +17,12 @@ class JT51Synth(Elaboratable):
         m = Module()
 
         # Generate our domain clocks/resets.
-        m.submodules.car = platform.clock_domain_generator()
-
-        m.submodules.usbmidi = usbmidi = USBMIDI()
+        m.submodules.car         = platform.clock_domain_generator()
+        m.submodules.usbmidi     = usbmidi = USBMIDI()
         m.submodules.synthmodule = synthmodule = SynthModule()
 
-        m.d.usb  += synthmodule.midi_stream.stream_eq(usbmidi.stream_out),
+        m.d.usb += synthmodule.midi_stream.stream_eq(usbmidi.stream_out),
+
         adat = platform.request("adat")
         m.d.comb += adat.tx.eq(synthmodule.adat_out)
 

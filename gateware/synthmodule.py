@@ -15,7 +15,7 @@ class SynthModule(Elaboratable):
     """ Main Synth module excluding USB, modularized to facilitate integration testing"""
     def __init__(self) -> None:
        self.midi_stream = StreamInterface(payload_width=8)
-       self.adat_out = Signal()
+       self.adat_out    = Signal()
 
     def elaborate(self, platform):
         m = Module()
