@@ -11,6 +11,12 @@ SAMPLE_RATE = 48000
 
 
 class VGMStreamPlayer:
+    async def sn76489_write(self, data):
+        raise NotImplementedError("VGMStream.sn76489_write not implemented")
+
+    async def ym2612_write(self, port, address, data):
+        raise NotImplementedError("VGMStream.ym2612_write not implemented")
+
     async def ym2151_write(self, address, data):
         raise NotImplementedError("VGMStream.ym2151_write not implemented")
 
@@ -161,7 +167,13 @@ class VGMStreamReader:
     async def parse_data(self, player):
         while True:
             command = self._read0("B")
-            if command == 0x54:
+            if command == 0x50:
+                await player.sn76489_write(self._read0("B"))
+            elif command == 0x52:
+                await player.ym2612_write(0,*self._read("BB"))
+            elif command == 0x53:
+                await player.ym2612_write(1, *self._read("BB"))
+            elif command == 0x54:
                 await player.ym2151_write(*self._read("BB"))
             elif command == 0x5A:
                 await player.ym3812_write(*self._read("BB"))
@@ -187,7 +199,7 @@ class VGMStreamReader:
                     print(f"second byte should be 0x66 in a data block, but was: {b:02x}")
                 compression_type = self._read0("B")
                 size = self._read0("I")
-                print(f"======================== got data block of type {compression_type}  and size {size} ======================== ")
+                print(f"======================== got data block of type 0x{compression_type:02x}  and size {size} ======================== ")
                 if compression_type & 0b11000000 == 0x80:
                     datasize = self._read0("I")
                     address = self._read0("I")
@@ -209,6 +221,30 @@ class VGMStreamReader:
                 addr = addr_msb << 8 | addr_lsb
                 databyte = self._read0("B")
                 print(f"SEGA PCM write to {addr:04x}: {databyte:02x}")
+            elif command == 0x90:
+                stream_id = self._read0("B")
+                chip_type = self._read0("B")
+                register  = self._read0("B")
+                port      = self._read0("B")
+                print(f"Setup Stream Control stream_id: {stream_id:02x} chip type {chip_type:02x} port {port:02x} register {register:02x}")
+            elif command == 0x91:
+                stream_id = self._read0("B")
+                bank_id   = self._read0("B")
+                step_size = self._read0("B")
+                step_base = self._read0("B")
+                print(f"Set Stream Data stream_id: {stream_id:02x} bank {bank_id:02x} step size {step_size:02x} base {step_base:02x}")
+            elif command == 0x92:
+                stream_id = self._read0("B")
+                freq = self._read0("I")
+                print(f"Set Stream Frequency stream_id: {stream_id:02x} freq: {freq}")
+            elif command == 0x95:
+                stream_id = self._read0("B")
+                block_id = self._read0("H")
+                flags = self._read0("B")
+                print(f"Start Stream stream_id: {stream_id:02x}, block id {block_id:04x}, flags {flags:02x}")
+            elif command == 0x94:
+                stream_id = self._read0("B")
+                print(f"Stop Stream stream_id: {stream_id:02x}")
             else:
                 raise NotImplementedError("Unknown VGM command {:#04x} at stream offset {}"
                                           .format(command, self._input.tell() - 1))

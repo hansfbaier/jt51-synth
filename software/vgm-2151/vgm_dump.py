@@ -43,7 +43,14 @@ def channel_env(paramno):
     op = paramno // 8
     return f"ch{channel}-op{opmap[op]}"
 
-class TSVStreamPlayer(vgm.VGMStreamPlayer):
+class VGMDumper(vgm.VGMStreamPlayer):
+    async def sn76489_write(self, data):
+        print(f"SN76489 write: {data:02x}")
+
+    async def ym2612_write(self, port, address, data):
+        result = f"YM2612 write at port {port}, address: {address:02x} data: {data:02x}"
+        print(result)
+
     async def ym2151_write(self, address, data):
         result = ""
         if address == 0x08:
@@ -144,7 +151,7 @@ if __name__ == "__main__":
     arg = sys.argv[1]
     if arg.endswith(".vgz"):
         reader = vgm.VGMStreamReader(gzip.GzipFile(arg, "rb"))
-        player = TSVStreamPlayer()
+        player = VGMDumper()
         asyncio.run(reader.parse_data(player))
     else:
         print("Unrecognized format!")
