@@ -151,6 +151,9 @@ class MIDIController(Elaboratable):
                     m.next = "WAIT_END"
 
             with m.State("NOTE_ON_II"):
+                # do not start reading next MIDI event while we are sending this one
+                m.d.comb += midi_stream.ready.eq(0)
+
                 channel_no = (midi_stream.payload & 0b111)
                 # turn all oscillators on
                 c2_m2_c1_m1 = 0b1111

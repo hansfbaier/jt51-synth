@@ -74,6 +74,13 @@ if __name__ == "__main__":
         yield from sysex(0x04, 0xf0, 0x0a, 0x0b, 0x07, 0x0c, 0x0d, 0xf7)
         for _ in range(40):
             yield Tick("usb")
+        yield dut.midi_stream.valid.eq(1)
+        yield from midi_message(0x93, 60, 0x7f, set_valid=False)
+        yield Tick("usb")
+        yield from midi_message(0x93, 61, 0x7f, set_valid=False)
+        yield dut.midi_stream.valid.eq(0)
+        for _ in range(128):
+            yield Tick("usb")
 
     def jt51_process():
         yield Tick("jt51")
