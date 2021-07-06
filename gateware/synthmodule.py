@@ -4,7 +4,7 @@ from nmigen.lib.fifo import AsyncFIFO
 from nmigen.cli      import main
 
 from nmigen_library.stream      import StreamInterface
-from nmigen_library.stream.fifo import connect_fifo_to_stream
+from nmigen_library.stream.fifo import connect_stream_to_fifo
 
 from jt51           import Jt51, Jt51Streamer
 from resampler      import FractionalResampler
@@ -29,21 +29,20 @@ class SynthModule(Elaboratable):
 
         m.submodules.jt51instance = jt51instance = Jt51()
         m.submodules.jt51streamer = jt51streamer = Jt51Streamer(jt51instance)
-        m.submodules.sample_valid = jt51_sample_valid = DomainRenamer("jt51")(EdgeToPulse())
 
         bitwidth = 16
+        cutoff_frequency = 20e3
+        m.submodules.resampler_left = resampler_left = DomainRenamer("jt51")(FractionalResampler(
+            input_samplerate=56e3, upsample_factor=6, downsample_factor=7, filter_order=28,
+            filter_cutoff=cutoff_frequency, bitwidth=bitwidth, prescale=4))
+        m.submodules.resampler_right = resampler_right = DomainRenamer("jt51")(FractionalResampler(
+            input_samplerate=56e3, upsample_factor=6, downsample_factor=7, filter_order=28,
+            filter_cutoff=cutoff_frequency, bitwidth=bitwidth, prescale=4))
+
         m.submodules.audio_fifo_left  = audio_fifo_left  = \
             AsyncFIFO(width=bitwidth, depth=8, w_domain="jt51", r_domain="sync")
         m.submodules.audio_fifo_right = audio_fifo_right = \
             AsyncFIFO(width=bitwidth, depth=8, w_domain="jt51", r_domain="sync")
-
-        cutoff_frequency = 20e3
-        m.submodules.resampler_left = resampler_left = FractionalResampler(
-            input_samplerate=56e3, upsample_factor=6, downsample_factor=7,
-            filter_cutoff=cutoff_frequency, bitwidth=bitwidth, prescale=4)
-        m.submodules.resampler_right = resampler_right = FractionalResampler(
-            input_samplerate=56e3, upsample_factor=6, downsample_factor=7,
-            filter_cutoff=cutoff_frequency, bitwidth=bitwidth, prescale=4)
 
         m.submodules.adat_transmitter = adat_transmitter = ADATTransmitter()
 
@@ -54,43 +53,39 @@ class SynthModule(Elaboratable):
             jt51instance.cs_n.eq(0),
             jt51instance.cen.eq(1),
             jt51streamer.input_stream.stream_eq(midicontroller.jt51_stream),
-            jt51_sample_valid.edge_in.eq(jt51instance.sample),
         ]
 
         # make cen_p1 half the JT51 clock speed
         m.d.jt51 += jt51instance.cen_p1.eq(~jt51instance.cen_p1)
 
-        # receive the audio from the JT51 and write it into the audio FIFOs
-        with m.If(jt51_sample_valid.pulse_out):
-            with m.If(audio_fifo_left.w_rdy):
-                # FIFO-Layout: sample (Bits 0-15), channel (Bit 16)
+        # receive the audio from the JT51 and write it into the resamplers
+        with m.If(jt51instance.sample):
+            with m.If(resampler_left.signal_in.ready):
                 m.d.jt51 += [
-                    audio_fifo_left.w_data.eq(jt51instance.xleft),
-                    audio_fifo_left.w_en.eq(1)
+                    resampler_left.signal_in.payload.eq(jt51instance.xleft),
+                    resampler_left.signal_in.valid.eq(1)
                 ]
-            with m.If(audio_fifo_right.w_rdy):
+            with m.If(resampler_right.signal_in.ready):
                 m.d.jt51 += [
-                    audio_fifo_right.w_data.eq(jt51instance.xright),
-                    audio_fifo_right.w_en.eq(1)
+                    resampler_right.signal_in.payload.eq(jt51instance.xright),
+                    resampler_right.signal_in.valid.eq(1)
                 ]
         with m.Else():
             m.d.jt51 += [
-                audio_fifo_left.w_data.eq(0),
-                audio_fifo_left.w_en.eq(0),
-                audio_fifo_right.w_data.eq(0),
-                audio_fifo_right.w_en.eq(0),
+                resampler_left.signal_in.payload.eq(0),
+                resampler_left.signal_in.valid.eq(0),
+                resampler_right.signal_in.payload.eq(0),
+                resampler_right.signal_in.valid.eq(0),
             ]
 
         # resample the audio FIFOs
-        connect_fifo_to_stream(m, audio_fifo_left,  resampler_left.signal_in)
-        connect_fifo_to_stream(m, audio_fifo_right, resampler_right.signal_in)
+        connect_stream_to_fifo(m, resampler_left.signal_out,  audio_fifo_left)
+        connect_stream_to_fifo(m, resampler_right.signal_out, audio_fifo_right)
 
-        # FSM which writes the data from the resamplers into the ADAT transmitter
+        # FSM which writes the data from the FIFOs into the ADAT transmitter
         with m.FSM(name="transmit_fsm"):
-            left_channel  = resampler_left.signal_out
-            right_channel = resampler_right.signal_out
-            m.d.comb += left_channel.ready.eq(adat_transmitter.ready_out)
-            m.d.comb += right_channel.ready.eq(adat_transmitter.ready_out)
+            m.d.comb += audio_fifo_left.r_en.eq(adat_transmitter.ready_out)
+            m.d.comb += audio_fifo_right.r_en.eq(adat_transmitter.ready_out)
 
             with m.State("IDLE"):
                 m.d.sync += [
@@ -98,10 +93,10 @@ class SynthModule(Elaboratable):
                     adat_transmitter.last_in.eq(0),
                 ]
 
-                with m.If(left_channel.valid & adat_transmitter.ready_out):
+                with m.If(audio_fifo_left.r_rdy & adat_transmitter.ready_out):
                     m.d.sync += [
                         adat_transmitter.valid_in.eq(1),
-                        adat_transmitter.sample_in.eq(left_channel.payload[:16] << 8),
+                        adat_transmitter.sample_in.eq(audio_fifo_left.r_data << 8),
                         adat_transmitter.addr_in.eq(0),
                         adat_transmitter.last_in.eq(0),
                     ]
@@ -110,10 +105,10 @@ class SynthModule(Elaboratable):
                     m.d.sync += adat_transmitter.valid_in.eq(0)
 
             with m.State("TRANSFER"):
-                with m.If(right_channel.valid & adat_transmitter.ready_out):
+                with m.If(audio_fifo_right.r_rdy & adat_transmitter.ready_out):
                     m.d.sync += [
                         adat_transmitter.valid_in.eq(1),
-                        adat_transmitter.sample_in.eq(right_channel.payload[:16] << 8),
+                        adat_transmitter.sample_in.eq(audio_fifo_right.r_data << 8),
                         adat_transmitter.addr_in.eq(1),
                         adat_transmitter.last_in.eq(1)
                     ]
