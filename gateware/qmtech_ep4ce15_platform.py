@@ -143,6 +143,7 @@ class JT51SynthPlatform(QMTechEP4CE15Platform, LUNAPlatform):
         """
         templates["{{name}}.sdc"] += r"""
             create_clock -name "clk_60MHz" -period 16.667 [get_ports "ulpi_0__clk__io"]
+            derive_pll_clocks -create_base_clocks
         """
         return templates
 
