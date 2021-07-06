@@ -142,8 +142,7 @@ class JT51SynthPlatform(QMTechEP4CE15Platform, LUNAPlatform):
             set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51.v
         """
         templates["{{name}}.sdc"] += r"""
-            create_clock -name "clk_60MHz" -period 16.667 [get_ports "ulpi_0__clk__io"]
-            derive_pll_clocks -create_base_clocks
+            derive_pll_clocks
         """
         return templates
 
