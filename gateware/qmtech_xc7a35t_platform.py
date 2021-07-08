@@ -133,12 +133,21 @@ class JT51SynthPlatform(QMTechXC7A35TPlatform, LUNAPlatform):
 
     def toolchain_prepare(self, fragment, name, **kwargs):
         plan = super().toolchain_prepare(fragment, name, **kwargs)
-        plan.files['top.xdc'] += "\nset ulpi_out [get_ports -regexp ulpi.*(stp|data).*]\n" + \
-                                 "set_output_delay -clock usb_clk 5 $ulpi_out\n" + \
-                                 "set_output_delay -clock usb_clk -1 -min $ulpi_out\n" + \
-                                 "set ulpi_inputs [get_ports -regexp ulpi.*(data|dir|nxt).*]\n" + \
-                                 "set_input_delay -clock usb_clk -min 1 $ulpi_inputs\n" + \
-                                 "set_input_delay -clock usb_clk -max 3.5 $ulpi_inputs\n"
+        plan.files['top.xdc'] += """
+            set ulpi_out [get_ports -regexp ulpi.*(stp|data).*]
+            set_output_delay -clock usb_clk 5 $ulpi_out
+            set_output_delay -clock usb_clk -1 -min $ulpi_out
+            set ulpi_inputs [get_ports -regexp ulpi.*(data|dir|nxt).*]
+            set_input_delay -clock usb_clk -min 1 $ulpi_inputs
+            set_input_delay -clock usb_clk -max 3.5 $ulpi_inputs
+
+             # constrain clock domain crossings
+            set_max_delay -datapath_only 14 -from [get_cells synthmodule/midicontroller/output_fifo/produce_cdc_produce_w_gry_reg[*]] -to [get_cells synthmodule/midicontroller/output_fifo/produce_cdc/stage0_reg[*]]
+            set_max_delay -datapath_only 14 -from [get_cells synthmodule/midicontroller/output_fifo/consume_cdc_consume_r_gry_reg[*]] -to [get_cells synthmodule/midicontroller/output_fifo/consume_cdc/stage0_reg[*]]
+            set_max_delay -datapath_only 20 -from [get_cells synthmodule/adat_transmitter/transmit_fifo/produce_cdc_produce_w_gry_reg[*]] -to [get_cells synthmodule/adat_transmitter/transmit_fifo/produce_cdc/stage0_reg[*]]
+            set_max_delay -datapath_only 20 -from [get_cells synthmodule/adat_transmitter/transmit_fifo/consume_cdc_consume_r_gry_reg[*]] -to [get_cells synthmodule/adat_transmitter/transmit_fifo/consume_cdc/stage0_reg[*]]
+            set_max_delay -datapath_only 20 -from [get_clocks car_jt51_clk] -to [get_clocks car_clk]
+            set_max_delay -datapath_only 20 -from [get_clocks car_clk] -to [get_clocks car_jt51_clk]"""
 
         jt51_files = [
             "../gateware/jt51/hdl/jt51_noise_lfsr.v",
