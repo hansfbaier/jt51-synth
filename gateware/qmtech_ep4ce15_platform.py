@@ -160,7 +160,7 @@ class JT51SynthPlatform(QMTechEP4CE15Platform, LUNAPlatform):
                 dir="J_2:11", nxt="J_2:13", stp="J_2:15", rst="J_2:7", rst_invert=True, # USB3320 reset is active low
                 attrs=Attrs(io_standard="3.3-V LVCMOS")),
 
-            Resource("ground", 0, Pins(" ".join([f"J_2:{i}" for i in range(8, 33, 2)]), dir="o"), Attrs(io_standard="3.3-V LVCMOS")),
+            Resource("ground", 0, Pins(" ".join([f"J_2:{i}" for i in range(12, 33, 2)]), dir="o"), Attrs(io_standard="3.3-V LVCMOS")),
 
             Resource("debug_led", 0, Pins("J_2:34", dir="o"), Attrs(io_standard="3.3-V LVCMOS")),
             Resource("debug_led", 1, Pins("J_2:36", dir="o"), Attrs(io_standard="3.3-V LVCMOS")),

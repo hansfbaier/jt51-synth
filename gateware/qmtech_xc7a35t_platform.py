@@ -8,8 +8,6 @@ from nmigen_boards.qmtech_xc7a35t_core import QMTechXC7A35TPlatform
 
 
 class JT51SynthClockDomainGenerator(Elaboratable):
-    """ Clock/Reset Controller for the Arty A7. """
-
     def __init__(self, *, clock_frequencies=None, clock_signal_name=None):
         pass
 
@@ -17,26 +15,30 @@ class JT51SynthClockDomainGenerator(Elaboratable):
         m = Module()
 
         # Create our domains
-        m.domains.sync = ClockDomain()
-        m.domains.usb  = ClockDomain()
-        m.domains.fast = ClockDomain()
-        m.domains.jt51 = ClockDomain()
-        m.domains.adat = ClockDomain()
+        m.domains.sync    = ClockDomain()
+        m.domains.usb     = ClockDomain()
+        m.domains.jt51    = ClockDomain()
+        m.domains.jt51int = ClockDomain()
+        m.domains.adat    = ClockDomain()
 
-        main_clock = Signal()
-        fast_clock = Signal()
+        usb_clock     = Signal()
+        sync_clock    = Signal()
         jt51_clock = Signal()
-        adat_clock = Signal()
+        jt51_clock    = Signal()
+        adat_clock    = Signal()
 
-        locked   = Signal()
-        feedback = Signal()
+        mainpll_locked   = Signal()
+        mainpll_feedback = Signal()
 
-        adat_feedback = Signal()
-        adat_locked = Signal()
+        adatpll_feedback  = Signal()
+        adatpll_locked    = Signal()
+
+        jt51pll_feedback = Signal()
+        jt51pll_locked   = Signal()
 
         clk_50 = platform.request(platform.default_clk)
 
-        m.submodules.usb2_pll = Instance("PLLE2_ADV",
+        m.submodules.mainpll = Instance("PLLE2_ADV",
             p_BANDWIDTH            = "OPTIMIZED",
             p_COMPENSATION         = "ZHOLD",
             p_STARTUP_WAIT         = "FALSE",
@@ -46,69 +48,74 @@ class JT51SynthClockDomainGenerator(Elaboratable):
             p_CLKOUT0_DIVIDE       = 25,  # 60MHz
             p_CLKOUT0_PHASE        = 0.000,
             p_CLKOUT0_DUTY_CYCLE   = 0.500,
-            p_CLKOUT1_DIVIDE       = 12,  # 125MHz
+            p_CLKOUT1_DIVIDE       = 50,  # 30MHz
             p_CLKOUT1_PHASE        = 0.000,
             p_CLKOUT1_DUTY_CYCLE   = 0.500,
             p_CLKIN1_PERIOD        = 20,
-            i_CLKFBIN              = feedback,
-            o_CLKFBOUT             = feedback,
+            i_CLKFBIN              = mainpll_feedback,
+            o_CLKFBOUT             = mainpll_feedback,
             i_CLKIN1               = clk_50,
-            o_CLKOUT0              = main_clock,
-            o_CLKOUT1              = fast_clock,
-            o_LOCKED               = locked,
+            o_CLKOUT0              = usb_clock,
+            o_CLKOUT1              = sync_clock,
+            o_LOCKED               = mainpll_locked,
         )
 
-        m.submodules.adat_pll = Instance("PLLE2_ADV",
+        m.submodules.adat_pll = Instance("MMCME2_ADV",
             p_BANDWIDTH            = "OPTIMIZED",
             p_COMPENSATION         = "ZHOLD",
             p_STARTUP_WAIT         = "FALSE",
             p_DIVCLK_DIVIDE        = 1,
-            p_CLKFBOUT_MULT        = 29,
+            p_CLKFBOUT_MULT_F      = 17,
             p_CLKFBOUT_PHASE       = 0.000,
-            p_CLKOUT0_DIVIDE       = 118,  # 12.288MHz
+            p_CLKOUT0_DIVIDE_F     = 83,  # 12.288MHz = 48kHz * 256
             p_CLKOUT0_PHASE        = 0.000,
             p_CLKOUT0_DUTY_CYCLE   = 0.500,
-            p_CLKIN1_PERIOD        = 20,
-            i_CLKFBIN              = adat_feedback,
-            o_CLKFBOUT             = adat_feedback,
-            i_CLKIN1               = clk_50,
+            p_CLKIN1_PERIOD        = 16.6666666,
+            i_CLKFBIN              = adatpll_feedback,
+            o_CLKFBOUT             = adatpll_feedback,
+            i_CLKIN1               = usb_clock,
             o_CLKOUT0              = adat_clock,
-            o_LOCKED               = adat_locked,
+            o_LOCKED               = adatpll_locked,
         )
 
-        led = platform.request("led")
+        m.submodules.jt51_pll = Instance("MMCME2_ADV",
+            p_BANDWIDTH            = "OPTIMIZED",
+            p_COMPENSATION         = "ZHOLD",
+            p_STARTUP_WAIT         = "FALSE",
+            p_DIVCLK_DIVIDE        = 2,
+            p_CLKFBOUT_MULT_F      = 43,
+            p_CLKFBOUT_PHASE       = 0.000,
+            p_CLKOUT6_DIVIDE       = 90,
+            p_CLKOUT6_PHASE        = 0.000,
+            p_CLKOUT6_DUTY_CYCLE   = 0.500,
+            p_CLKOUT4_CASCADE      = "TRUE",
+            p_CLKOUT4_DIVIDE       = 2,
+            p_CLKOUT4_PHASE        = 0.000,
+            p_CLKOUT4_DUTY_CYCLE   = 0.500,
+            p_CLKIN1_PERIOD        = 33.3333333,
+            i_CLKFBIN              = jt51pll_feedback,
+            o_CLKFBOUT             = jt51pll_feedback,
+            i_CLKIN1               = sync_clock,
+            o_CLKOUT4              = jt51_clock,
+            o_LOCKED               = jt51pll_locked,
+        )
 
-        jt51_counter = Signal(6)
-        # we need 3.59 MHz for the jt51
-        # so we divide 125 MHz by 35
-        # error: 125/35/3.59-1 = 0.005173
-        m.d.fast += [
-            jt51_counter.eq(jt51_counter + 1)
-        ]
-        with m.If(jt51_counter == 34):
-            m.d.fast += [
-                jt51_counter.eq(0),
-                jt51_clock.eq(1)
-            ]
-        with m.Elif(jt51_counter == 17):
-            m.d.fast += jt51_clock.eq(0)
+        locked = Signal()
 
         # Connect up our clock domains.
         m.d.comb += [
-            led.eq(locked),
-            ClockSignal("sync").eq(main_clock),
-            ClockSignal("usb").eq(main_clock),
-            ClockSignal("fast").eq(fast_clock),
+            locked.eq(mainpll_locked & adatpll_locked & jt51pll_locked),
+            ClockSignal("sync").eq(sync_clock),
+            ClockSignal("usb").eq(usb_clock),
             ClockSignal("jt51").eq(jt51_clock),
             ClockSignal("adat").eq(adat_clock),
-            ResetSignal("sync").eq(locked & adat_locked),
-            ResetSignal("fast").eq(locked & adat_locked),
-            ResetSignal("jt51").eq(locked & adat_locked),
-            ResetSignal("adat").eq(locked & adat_locked),
-            ResetSignal("sync").eq(locked & adat_locked),
+            ResetSignal("sync").eq(locked),
+            ResetSignal("jt51").eq(locked),
+            ResetSignal("adat").eq(locked),
+            ResetSignal("sync").eq(locked),
         ]
 
-        platform.add_clock_constraint(main_clock, 60e6)
+        #platform.add_clock_constraint(main_clock, 60e6)
 
         ground = platform.request("ground")
         m.d.comb += ground.eq(0)
@@ -169,12 +176,12 @@ class JT51SynthPlatform(QMTechXC7A35TPlatform, LUNAPlatform):
         self.resources += [
             # USB2 / ULPI section of the USB3300.
             ULPIResource("ulpi", 0,
-                data="J_2:31 J_2:29 J_2:27 J_2:25 J_2:23 J_2:21 J_2:19 J_2:17",
-                clk="J_2:9", clk_dir="o", # this needs to be a clock pin of the FPGA or the core won't work
-                dir="J_2:11", nxt="J_2:13", stp="J_2:15", rst="J_2:7", rst_invert=True, # USB3320 reset is active low
-                attrs=Attrs(IOSTANDARD="LVCMOS33", SLEW="FAST")),
+                data="J_3:31 J_3:29 J_3:27 J_3:25 J_3:23 J_3:21 J_3:19 J_3:17",
+                clk="J_3:9", clk_dir="o",
+                dir="J_3:11", nxt="J_3:13", stp="J_3:15", rst="J_3:7", rst_invert=True, # USB3320 reset is active low
+                attrs=Attrs(IOSTANDARD="LVCMOS18", SLEW="FAST")),
 
-            Resource("ground", 0, Pins(" ".join([f"J_2:{i}" for i in range(8, 33, 2)]), dir="o"), Attrs(IOSTANDARD="LVCMOS33")),
+            Resource("ground", 0, Pins(" ".join([f"J_3:{i}" for i in range(8, 33, 2)]), dir="o"), Attrs(IOSTANDARD="LVCMOS18")),
 
             Resource("debug_led", 0, Pins("J_2:34", dir="o"), Attrs(IOSTANDARD="LVCMOS33")),
             Resource("debug_led", 1, Pins("J_2:36", dir="o"), Attrs(IOSTANDARD="LVCMOS33")),
@@ -188,8 +195,8 @@ class JT51SynthPlatform(QMTechXC7A35TPlatform, LUNAPlatform):
             UARTResource(0, rx="J_2:8", tx="J_2:10", attrs=Attrs(IOSTANDARD="LVCMOS33")),
 
             Resource("adat", 0,
-                Subsignal("tx", Pins("J_3:7", dir="o")),
-                Subsignal("rx", Pins("J_3:8", dir="i")),
+                Subsignal("tx", Pins("J_2:12", dir="o")),
+                Subsignal("rx", Pins("J_2:14", dir="i")),
                 Attrs(IOSTANDARD="LVCMOS33"))
         ]
 
