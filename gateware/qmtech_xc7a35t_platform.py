@@ -60,6 +60,7 @@ class JT51SynthClockDomainGenerator(Elaboratable):
             o_LOCKED               = mainpll_locked,
         )
 
+        # 12.288MHz = 48kHz * 256
         m.submodules.adat_pll = Instance("MMCME2_ADV",
             p_BANDWIDTH            = "OPTIMIZED",
             p_COMPENSATION         = "ZHOLD",
@@ -78,14 +79,18 @@ class JT51SynthClockDomainGenerator(Elaboratable):
             o_LOCKED               = adatpll_locked,
         )
 
+        # 56 kHz output sample rate is about 2 cents off of A=440Hz
+        # but at least we have a frequency a PLL can generate without
+        # a dedicated 3.579545 MHz NTSC crystal
+        # 3.584 MHz = 56kHz * 64 (1 sample takes 64 JT51 cycles)
         m.submodules.jt51_pll = Instance("MMCME2_ADV",
             p_BANDWIDTH            = "OPTIMIZED",
             p_COMPENSATION         = "ZHOLD",
             p_STARTUP_WAIT         = "FALSE",
-            p_DIVCLK_DIVIDE        = 2,
-            p_CLKFBOUT_MULT_F      = 43,
+            p_DIVCLK_DIVIDE        = 1,
+            p_CLKFBOUT_MULT_F      = 27,
             p_CLKFBOUT_PHASE       = 0.000,
-            p_CLKOUT6_DIVIDE       = 90,
+            p_CLKOUT6_DIVIDE       = 113,
             p_CLKOUT6_PHASE        = 0.000,
             p_CLKOUT6_DUTY_CYCLE   = 0.500,
             p_CLKOUT4_CASCADE      = "TRUE",
