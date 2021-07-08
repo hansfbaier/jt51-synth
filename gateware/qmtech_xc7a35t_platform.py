@@ -134,11 +134,11 @@ class JT51SynthPlatform(QMTechXC7A35TPlatform, LUNAPlatform):
     def toolchain_prepare(self, fragment, name, **kwargs):
         plan = super().toolchain_prepare(fragment, name, **kwargs)
         plan.files['top.xdc'] += "\nset ulpi_out [get_ports -regexp ulpi.*(stp|data).*]\n" + \
-                                 "set_output_delay -clock main_clock 5 $ulpi_out\n" + \
-                                 "set_output_delay -clock main_clock -1 -min $ulpi_out\n" + \
+                                 "set_output_delay -clock usb_clk 5 $ulpi_out\n" + \
+                                 "set_output_delay -clock usb_clk -1 -min $ulpi_out\n" + \
                                  "set ulpi_inputs [get_ports -regexp ulpi.*(data|dir|nxt).*]\n" + \
-                                 "set_input_delay -clock main_clock -min 1 $ulpi_inputs\n" + \
-                                 "set_input_delay -clock main_clock -max 3.5 $ulpi_inputs\n"
+                                 "set_input_delay -clock usb_clk -min 1 $ulpi_inputs\n" + \
+                                 "set_input_delay -clock usb_clk -max 3.5 $ulpi_inputs\n"
 
         jt51_files = [
             "../gateware/jt51/hdl/jt51_noise_lfsr.v",
