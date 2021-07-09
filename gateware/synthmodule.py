@@ -34,10 +34,10 @@ class SynthModule(Elaboratable):
         cutoff_frequency = 20e3
         verbose = False
         m.submodules.resampler_left = resampler_left = DomainRenamer("jt51")(FractionalResampler(
-            input_samplerate=56e3, upsample_factor=6, downsample_factor=7, filter_order=20,
+            input_samplerate=56e3, upsample_factor=6, downsample_factor=7, filter_order=24,
             filter_cutoff=cutoff_frequency, bitwidth=bitwidth, prescale=4, verbose=verbose))
         m.submodules.resampler_right = resampler_right = DomainRenamer("jt51")(FractionalResampler(
-            input_samplerate=56e3, upsample_factor=6, downsample_factor=7, filter_order=20,
+            input_samplerate=56e3, upsample_factor=6, downsample_factor=7, filter_order=24,
             filter_cutoff=cutoff_frequency, bitwidth=bitwidth, prescale=4, verbose=verbose))
 
         m.submodules.audio_fifo_left  = audio_fifo_left  = \
