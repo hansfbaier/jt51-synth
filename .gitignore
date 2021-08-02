@@ -1,4 +1,11 @@
 **/__pycache__
 build/
 gateware/venv
-**/obj_dir
+**/obj_dir.ipynb_checkpoints/**
+.vscode/**
+*.sof
+**/*.vcd
+software/jt51-plugin/target/**
+default*ipynb
+gateware/synthmodule-bench/obj_dir/**
+build/**
