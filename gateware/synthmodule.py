@@ -80,8 +80,10 @@ class SynthModule(Elaboratable):
             ]
 
         # resample the audio FIFOs
-        connect_stream_to_fifo(m, resampler_left.signal_out,  audio_fifo_left)
-        connect_stream_to_fifo(m, resampler_right.signal_out, audio_fifo_right)
+        m.d.comb += [
+            connect_stream_to_fifo(resampler_left.signal_out,  audio_fifo_left),
+            connect_stream_to_fifo(resampler_right.signal_out, audio_fifo_right),
+        ]
 
         # FSM which writes the data from the FIFOs into the ADAT transmitter
         with m.FSM(name="transmit_fsm"):
