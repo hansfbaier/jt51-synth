@@ -25,7 +25,7 @@ class SynthModule(Elaboratable):
         #
         m.submodules.midicontroller = midicontroller = MIDIController()
         # connect USB to the MIDIController
-        m.d.usb += midicontroller.midi_stream.stream_eq(self.midi_stream),
+        m.d.comb += midicontroller.midi_stream.stream_eq(self.midi_stream),
 
         m.submodules.jt51instance = jt51instance = Jt51()
         m.submodules.jt51streamer = jt51streamer = Jt51Streamer(jt51instance)

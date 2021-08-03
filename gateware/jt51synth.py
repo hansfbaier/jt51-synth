@@ -21,7 +21,7 @@ class JT51Synth(Elaboratable):
         m.submodules.usbmidi     = usbmidi = USBMIDI()
         m.submodules.synthmodule = synthmodule = SynthModule()
 
-        m.d.usb += synthmodule.midi_stream.stream_eq(usbmidi.stream_out),
+        m.d.comb += synthmodule.midi_stream.stream_eq(usbmidi.stream_out),
 
         adat = platform.request("adat")
         m.d.comb += adat.tx.eq(synthmodule.adat_out)
