@@ -1,9 +1,8 @@
 mido
 scipy
 git+https://github.com/nmigen/nmigen.git
-git+https://github.com/hansfbaier/nmigen-boards.git@qmtech-boards
-git+https://github.com/hansfbaier/python-usb-protocol.git@uac2
-git+https://github.com/hansfbaier/usb2-highspeed-core.git@works
+git+https://github.com/hansfbaier/nmigen-boards.git
+git+https://github.com/hansfbaier/usb2-highspeed-core.git
 git+https://github.com/hansfbaier/adat-core.git
 git+https://github.com/hansfbaier/nmigen-library.git
 git+https://github.com/hansfbaier/fractional-resampling-core.git

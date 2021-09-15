@@ -29,8 +29,8 @@ class JT51Synth(Elaboratable):
         return m
 
 if __name__ == "__main__":
-    #os.environ["LUNA_PLATFORM"] = "qmtech_xc7a35t_platform:JT51SynthPlatform"
-    os.environ["LUNA_PLATFORM"] = "qmtech_ep4ce15_platform:JT51SynthPlatform"
+    os.environ["LUNA_PLATFORM"] = "qmtech_xc7a35t_platform:JT51SynthPlatform"
+    #os.environ["LUNA_PLATFORM"] = "qmtech_ep4ce15_platform:JT51SynthPlatform"
     # use DE0Nano temporarily for testing until I get the USB3320 board
     #os.environ["LUNA_PLATFORM"] = "de0nanoplatform:DE0NanoPlatform"
     top_level_cli(JT51Synth)
