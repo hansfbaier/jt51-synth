@@ -4,16 +4,18 @@ from nmigen.build import Platform
 from luna.usb2                      import USBDevice, USBStreamInEndpoint, USBStreamOutEndpoint
 from luna.gateware.usb.usb2.request import StallOnlyRequestHandler
 
-from usb_protocol.types                import USBRequestType, USBDirection
-from usb_protocol.emitters             import DeviceDescriptorCollection
-from usb_protocol.types.descriptors    import uac
-from usb_protocol.emitters.descriptors import uac
+from usb_protocol.types                       import USBRequestType, USBDirection
+from usb_protocol.emitters                    import DeviceDescriptorCollection
+from usb_protocol.emitters.descriptors        import midi1
 
-from nmigen_library.stream import StreamInterface
+from nmigen_library.stream                    import StreamInterface
 
 class USBMIDI(Elaboratable):
-    def __init__(self):
+    def __init__(self, use_ila=False):
         self.stream_out = StreamInterface()
+        self.usb        = None
+        self._use_ila   = use_ila
+        self.additional_endpoints = []
 
     MAX_PACKET_SIZE = 512
     # we currently do not need MIDI feedback from the synth
@@ -41,56 +43,64 @@ class USBMIDI(Elaboratable):
             d.bNumConfigurations = 1
 
         with descriptors.ConfigurationDescriptor() as configDescr:
-            interface = uac.StandardMidiStreamingInterfaceDescriptorEmitter()
+            interface = midi1.StandardMidiStreamingInterfaceDescriptorEmitter()
             interface.bInterfaceNumber = 0
             interface.bNumEndpoints = 2 if self.with_midi_in else 1
             configDescr.add_subordinate_descriptor(interface)
 
-            streamingInterface = uac.ClassSpecificMidiStreamingInterfaceDescriptorEmitter()
+            streamingInterface = midi1.ClassSpecificMidiStreamingInterfaceDescriptorEmitter()
 
             if self.with_midi_in:
-                outToHostJack = uac.MidiOutJackDescriptorEmitter()
+                outToHostJack = midi1.MidiOutJackDescriptorEmitter()
                 outToHostJack.bJackID = 1
-                outToHostJack.bJackType = uac.MidiStreamingJackTypes.EMBEDDED
+                outToHostJack.bJackType = midi1.MidiStreamingJackTypes.EMBEDDED
                 outToHostJack.add_source(2)
                 streamingInterface.add_subordinate_descriptor(outToHostJack)
 
-                inToDeviceJack = uac.MidiInJackDescriptorEmitter()
+                inToDeviceJack = midi1.MidiInJackDescriptorEmitter()
                 inToDeviceJack.bJackID = 2
-                inToDeviceJack.bJackType = uac.MidiStreamingJackTypes.EXTERNAL
+                inToDeviceJack.bJackType = midi1.MidiStreamingJackTypes.EXTERNAL
                 streamingInterface.add_subordinate_descriptor(inToDeviceJack)
 
-            inFromHostJack = uac.MidiInJackDescriptorEmitter()
+            inFromHostJack = midi1.MidiInJackDescriptorEmitter()
             inFromHostJack.bJackID = 3
-            inFromHostJack.bJackType = uac.MidiStreamingJackTypes.EMBEDDED
+            inFromHostJack.bJackType = midi1.MidiStreamingJackTypes.EMBEDDED
             streamingInterface.add_subordinate_descriptor(inFromHostJack)
 
-            outFromDeviceJack = uac.MidiOutJackDescriptorEmitter()
+            outFromDeviceJack = midi1.MidiOutJackDescriptorEmitter()
             outFromDeviceJack.bJackID = 4
-            outFromDeviceJack.bJackType = uac.MidiStreamingJackTypes.EXTERNAL
+            outFromDeviceJack.bJackType = midi1.MidiStreamingJackTypes.EXTERNAL
             outFromDeviceJack.add_source(3)
             streamingInterface.add_subordinate_descriptor(outFromDeviceJack)
 
-            outEndpoint = uac.StandardMidiStreamingBulkDataEndpointDescriptorEmitter()
+            outEndpoint = midi1.StandardMidiStreamingBulkDataEndpointDescriptorEmitter()
             outEndpoint.bEndpointAddress = USBDirection.OUT.to_endpoint_address(1)
             outEndpoint.wMaxPacketSize = self.MAX_PACKET_SIZE
             streamingInterface.add_subordinate_descriptor(outEndpoint)
 
-            outMidiEndpoint = uac.ClassSpecificMidiStreamingBulkDataEndpointDescriptorEmitter()
+            outMidiEndpoint = midi1.ClassSpecificMidiStreamingBulkDataEndpointDescriptorEmitter()
             outMidiEndpoint.add_associated_jack(3)
             streamingInterface.add_subordinate_descriptor(outMidiEndpoint)
 
             if self.with_midi_in:
-                inEndpoint = uac.StandardMidiStreamingDataEndpointDescriptorEmitter()
+                inEndpoint = midi1.StandardMidiStreamingDataEndpointDescriptorEmitter()
                 inEndpoint.bEndpointAddress = USBDirection.IN.from_endpoint_address(1)
                 inEndpoint.wMaxPacketSize = self.MAX_PACKET_SIZE
                 streamingInterface.add_subordinate_descriptor(inEndpoint)
 
-                inMidiEndpoint = uac.ClassSpecificMidiStreamingBulkDataEndpointDescriptorEmitter()
+                inMidiEndpoint = midi1.ClassSpecificMidiStreamingBulkDataEndpointDescriptorEmitter()
                 inMidiEndpoint.add_associated_jack(1)
                 streamingInterface.add_subordinate_descriptor(inMidiEndpoint)
 
             configDescr.add_subordinate_descriptor(streamingInterface)
+
+            if self._use_ila:
+                with configDescr.InterfaceDescriptor() as i:
+                    i.bInterfaceNumber = 1
+
+                    with i.EndpointDescriptor() as e:
+                        e.bEndpointAddress = USBDirection.IN.to_endpoint_address(3) # EP 3 IN
+                        e.wMaxPacketSize   = self.MAX_PACKET_SIZE
 
         return descriptors
 
@@ -98,7 +108,7 @@ class USBMIDI(Elaboratable):
         m = Module()
 
         ulpi = platform.request(platform.default_usb_connection)
-        m.submodules.usb = usb = USBDevice(bus=ulpi)
+        m.submodules.usb = self.usb = usb = USBDevice(bus=ulpi)
 
         # Add our standard control endpoint to the device.
         descriptors = self.create_descriptors()
@@ -121,6 +131,9 @@ class USBMIDI(Elaboratable):
                 endpoint_number=1, # EP 1 IN
                 max_packet_size=self.MAX_PACKET_SIZE)
             usb.add_endpoint(ep1_in)
+
+        for endpoint in self.additional_endpoints:
+            usb.add_endpoint(endpoint)
 
         connect_button = 0 #platform.request("button", 0)
         m.d.comb += [
