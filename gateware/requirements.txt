@@ -1,5 +1,6 @@
 mido
 scipy
+git+https://github.com/hansfbaier/python-usb-descriptors.git
 git+https://github.com/nmigen/nmigen.git
 git+https://github.com/hansfbaier/nmigen-boards.git
 git+https://github.com/hansfbaier/usb2-highspeed-core.git
