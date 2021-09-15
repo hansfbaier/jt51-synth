@@ -4,11 +4,11 @@ from nmigen.lib.fifo import AsyncFIFO
 from nmigen.cli      import main
 
 from nmigen_library.stream      import StreamInterface
-from nmigen_library.stream.fifo import connect_stream_to_fifo
+from nmigen_library.stream import connect_stream_to_fifo
 
 from jt51           import Jt51, Jt51Streamer
 from resampler      import FractionalResampler
-from adat           import ADATTransmitter, EdgeToPulse
+from adat           import ADATTransmitter
 from midicontroller import MIDIController
 
 class SynthModule(Elaboratable):
