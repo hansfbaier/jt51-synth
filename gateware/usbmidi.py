@@ -13,9 +13,14 @@ from nmigen_library.stream                    import StreamInterface
 class USBMIDI(Elaboratable):
     def __init__(self, use_ila=False):
         self.stream_out = StreamInterface()
-        self.usb        = None
         self._use_ila   = use_ila
         self.additional_endpoints = []
+
+        # USB activity LEDs
+        self.usb_tx_active_out      = Signal()
+        self.usb_rx_active_out      = Signal()
+        self.usb_suspended_out      = Signal()
+        self.usb_reset_detected_out = Signal()
 
     MAX_PACKET_SIZE = 512
     # we currently do not need MIDI feedback from the synth
@@ -108,7 +113,7 @@ class USBMIDI(Elaboratable):
         m = Module()
 
         ulpi = platform.request(platform.default_usb_connection)
-        m.submodules.usb = self.usb = usb = USBDevice(bus=ulpi)
+        m.submodules.usb = usb = USBDevice(bus=ulpi)
 
         # Add our standard control endpoint to the device.
         descriptors = self.create_descriptors()
@@ -140,7 +145,11 @@ class USBMIDI(Elaboratable):
             usb.connect          .eq(~connect_button),
             # Connect our device as a high speed device
             usb.full_speed_only  .eq(0),
-            self.stream_out.stream_eq(ep1_out.stream)
+            self.stream_out.stream_eq(ep1_out.stream),
+            self.usb_tx_active_out.eq(usb.tx_activity_led),
+            self.usb_rx_active_out.eq(usb.rx_activity_led),
+            self.usb_suspended_out.eq(usb.suspended),
+            self.usb_reset_detected_out.eq(usb.reset_detected),
         ]
 
         return m

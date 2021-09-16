@@ -75,6 +75,14 @@ class JT51Synth(Elaboratable):
 
             ILACoreParameters(ila).pickle()
 
+        led = platform.request("debug_led")
+        m.d.comb += [
+            led[0].eq(usbmidi.usb_tx_active_out),
+            led[1].eq(usbmidi.usb_rx_active_out),
+            led[2].eq(usbmidi.usb_suspended_out),
+            led[3].eq(usbmidi.usb_reset_detected_out),
+        ]
+
         return m
 
 if __name__ == "__main__":
