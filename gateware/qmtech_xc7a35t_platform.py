@@ -199,7 +199,7 @@ class JT51SynthPlatform(QMTechXC7A35TPlatform, LUNAPlatform):
                 stp="J_2:9", dir="J_2:11", nxt="J_2:13",
                 attrs=Attrs(IOSTANDARD="LVCMOS33")),
 
-            Resource("debug_led", 0, Pins("J_2:40 J_2:39 J_2:38 J_2:37 J_2:36", dir="o"),
+            Resource("debug_led", 0, PinsN("J_2:40 J_2:39 J_2:38 J_2:37 J_2:36", dir="o"),
                 Attrs(IOSTANDARD="LVCMOS33")),
 
             Resource("adat", 0,
