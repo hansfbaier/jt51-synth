@@ -4,7 +4,7 @@ from nmigen.build import *
 from luna.gateware.platform.core import LUNAPlatform
 
 from nmigen_boards.resources import *
-from nmigen_boards.qmtech_ep4ce15 import QMTechEP4CE15Platform
+from nmigen_boards.qmtech_ep4ce import QMTechEP4CEPlatform
 
 
 class JT51SynthClockDomainGenerator(Elaboratable):
@@ -102,7 +102,7 @@ class JT51SynthClockDomainGenerator(Elaboratable):
 
         return m
 
-class JT51SynthPlatform(QMTechEP4CE15Platform, LUNAPlatform):
+class JT51SynthPlatform(QMTechEP4CEPlatform, LUNAPlatform):
     clock_domain_generator = JT51SynthClockDomainGenerator
     default_usb_connection = "ulpi"
 
@@ -148,16 +148,15 @@ class JT51SynthPlatform(QMTechEP4CE15Platform, LUNAPlatform):
         """
         templates["{{name}}.sdc"] += r"""
             derive_pll_clocks
-
-            set_net_delay -from [get_registers synthmodule:synthmodule|audio_fifo_left:audio_fifo_left|storage*] -to [get_registers synthmodule:synthmodule|audio_fifo_left:audio_fifo_left|_*] -max -get_value_from_clock_period dst_clock_period -value_multiplier 0.8
-            set_max_skew -from [get_keepers synthmodule:synthmodule|audio_fifo_left:audio_fifo_left|storage*] -to [get_keepers synthmodule:synthmodule|audio_fifo_left:audio_fifo_left|_*] -get_skew_value_from_clock_period min_clock_period -skew_value_multiplier 0.8
-
-            set_net_delay -from [get_registers synthmodule:synthmodule|audio_fifo_right:audio_fifo_right|storage*] -to [get_registers synthmodule:synthmodule|audio_fifo_right:audio_fifo_right|_*] -max -get_value_from_clock_period dst_clock_period -value_multiplier 0.8
-            set_max_skew -from [get_keepers synthmodule:synthmodule|audio_fifo_right:audio_fifo_right|storage*] -to [get_keepers synthmodule:synthmodule|audio_fifo_right:audio_fifo_right|_*] -get_skew_value_from_clock_period min_clock_period -skew_value_multiplier 0.8
-
-            set_net_delay -from [get_registers synthmodule:synthmodule|adat_transmitter:adat_transmitter|transmit_fifo:transmit_fifo|storage*] -to [get_registers synthmodule:synthmodule|adat_transmitter:adat_transmitter|transmit_fifo:transmit_fifo|_*] -max -get_value_from_clock_period dst_clock_period -value_multiplier 0.8
-            set_max_skew -from [get_keepers synthmodule:synthmodule|adat_transmitter:adat_transmitter|transmit_fifo:transmit_fifo|storage*] -to [get_keepers synthmodule:synthmodule|adat_transmitter:adat_transmitter|transmit_fifo:transmit_fifo|_*] -get_skew_value_from_clock_period min_clock_period -skew_value_multiplier 0.8
-        """
+            """
+# Those don't seem to do any good
+#            set_net_delay -from [get_registers synthmodule:synthmodule|audio_fifo_left:audio_fifo_left|storage*] -to [get_registers synthmodule:synthmodule|audio_fifo_left:audio_fifo_left|_*] -max -get_value_from_clock_period dst_clock_period -value_multiplier 0.8
+#            set_max_skew -from [get_keepers synthmodule:synthmodule|audio_fifo_left:audio_fifo_left|storage*] -to [get_keepers synthmodule:synthmodule|audio_fifo_left:audio_fifo_left|_*] -get_skew_value_from_clock_period min_clock_period -skew_value_multiplier 0.8
+#            set_net_delay -from [get_registers synthmodule:synthmodule|audio_fifo_right:audio_fifo_right|storage*] -to [get_registers synthmodule:synthmodule|audio_fifo_right:audio_fifo_right|_*] -max -get_value_from_clock_period dst_clock_period -value_multiplier 0.8
+#            set_max_skew -from [get_keepers synthmodule:synthmodule|audio_fifo_right:audio_fifo_right|storage*] -to [get_keepers synthmodule:synthmodule|audio_fifo_right:audio_fifo_right|_*] -get_skew_value_from_clock_period min_clock_period -skew_value_multiplier 0.8
+#            set_net_delay -from [get_registers synthmodule:synthmodule|adat_transmitter:adat_transmitter|transmit_fifo:transmit_fifo|storage*] -to [get_registers synthmodule:synthmodule|adat_transmitter:adat_transmitter|transmit_fifo:transmit_fifo|_*] -max -get_value_from_clock_period dst_clock_period -value_multiplier 0.8
+#            set_max_skew -from [get_keepers synthmodule:synthmodule|adat_transmitter:adat_transmitter|transmit_fifo:transmit_fifo|storage*] -to [get_keepers synthmodule:synthmodule|adat_transmitter:adat_transmitter|transmit_fifo:transmit_fifo|_*] -get_skew_value_from_clock_period min_clock_period -skew_value_multiplier 0.8
+#        """
         return templates
 
     def __init__(self):
@@ -171,16 +170,9 @@ class JT51SynthPlatform(QMTechEP4CE15Platform, LUNAPlatform):
 
             Resource("ground", 0, Pins(" ".join([f"J_2:{i}" for i in range(12, 33, 2)]), dir="o"), Attrs(io_standard="3.3-V LVCMOS")),
 
-            Resource("debug_led", 0, Pins("J_2:34", dir="o"), Attrs(io_standard="3.3-V LVCMOS")),
-            Resource("debug_led", 1, Pins("J_2:36", dir="o"), Attrs(io_standard="3.3-V LVCMOS")),
-            Resource("debug_led", 2, Pins("J_2:38", dir="o"), Attrs(io_standard="3.3-V LVCMOS")),
-            Resource("debug_led", 3, Pins("J_2:40", dir="o"), Attrs(io_standard="3.3-V LVCMOS")),
-            Resource("debug_led", 4, Pins("J_2:42", dir="o"), Attrs(io_standard="3.3-V LVCMOS")),
-            Resource("debug_led", 5, Pins("J_2:44", dir="o"), Attrs(io_standard="3.3-V LVCMOS")),
-            Resource("debug_led", 6, Pins("J_2:46", dir="o"), Attrs(io_standard="3.3-V LVCMOS")),
-            Resource("debug_led", 7, Pins("J_2:48", dir="o"), Attrs(io_standard="3.3-V LVCMOS")),
+            Resource("debug_led", 0, Pins("J_2:34 J_2:36 J_2:38 J_2:40 J_2:42 J_2:44 J_2:46 J_2:48", dir="o"), Attrs(io_standard="3.3-V LVCMOS")),
 
-            UARTResource(0, rx="J_2:8", tx="J_2:10", attrs=Attrs(io_standard="3.3-V LVCMOS")),
+            #UARTResource(0, rx="J_2:8", tx="J_2:10", attrs=Attrs(io_standard="3.3-V LVCMOS")),
 
             Resource("adat", 0,
                 Subsignal("tx", Pins("J_3:7", dir="o")),
