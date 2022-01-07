@@ -1,10 +1,10 @@
-from nmigen import *
-from nmigen.build import *
+from amaranth import *
+from amaranth.build import *
 
 from luna.gateware.platform.core import LUNAPlatform
 
-from nmigen_boards.resources import *
-from nmigen_boards.qmtech_xc7a35t_core import QMTechXC7A35TPlatform
+from amaranth_boards.resources import *
+from amaranth_boards.qmtech_xc7a35t_core import QMTechXC7A35TPlatform
 
 
 class JT51SynthClockDomainGenerator(Elaboratable):
@@ -15,18 +15,20 @@ class JT51SynthClockDomainGenerator(Elaboratable):
         m = Module()
 
         # Create our domains
-        m.domains.fast    = ClockDomain()
-        m.domains.sync    = ClockDomain()
-        m.domains.usb     = ClockDomain()
-        m.domains.adat    = ClockDomain()
-        m.domains.jt51    = ClockDomain()
-        m.domains.jt51int = ClockDomain()
+        m.domains.fast      = ClockDomain()
+        m.domains.sync      = ClockDomain()
+        m.domains.usb       = ClockDomain()
+        m.domains.usb_shift = ClockDomain()
+        m.domains.adat      = ClockDomain()
+        m.domains.jt51      = ClockDomain()
+        m.domains.jt51int   = ClockDomain()
 
-        fast_clock    = Signal()
-        sync_clock    = Signal()
-        usb_clock     = Signal()
-        adat_clock    = Signal()
-        jt51_clock    = Signal()
+        fast_clock      = Signal()
+        sync_clock      = Signal()
+        usb_clock       = Signal()
+        usb_shift_clock = Signal()
+        adat_clock      = Signal()
+        jt51_clock      = Signal()
 
         mainpll_locked   = Signal()
         mainpll_feedback = Signal()
@@ -56,6 +58,9 @@ class JT51SynthClockDomainGenerator(Elaboratable):
             p_CLKOUT2_DIVIDE       = 15,  # 100MHz
             p_CLKOUT2_PHASE        = 0.000,
             p_CLKOUT2_DUTY_CYCLE   = 0.500,
+            p_CLKOUT3_DIVIDE       = 25,  # 60MHz
+            p_CLKOUT3_PHASE        = 45.000,
+            p_CLKOUT3_DUTY_CYCLE   = 0.500,
             p_CLKIN2_PERIOD        = 10,
             i_CLKFBIN              = mainpll_feedback,
             o_CLKFBOUT             = mainpll_feedback,
@@ -63,6 +68,7 @@ class JT51SynthClockDomainGenerator(Elaboratable):
             o_CLKOUT0              = usb_clock,
             o_CLKOUT1              = sync_clock,
             o_CLKOUT2              = fast_clock,
+            o_CLKOUT3              = usb_shift_clock,
             o_LOCKED               = mainpll_locked,
         )
 
@@ -119,6 +125,7 @@ class JT51SynthClockDomainGenerator(Elaboratable):
             ClockSignal("fast").eq(fast_clock),
             ClockSignal("sync").eq(sync_clock),
             ClockSignal("usb").eq(usb_clock),
+            ClockSignal("usb_shift").eq(usb_shift_clock),
             ClockSignal("adat").eq(adat_clock),
             ClockSignal("jt51").eq(jt51_clock),
             ResetSignal("sync").eq(locked),
@@ -133,6 +140,7 @@ class JT51SynthClockDomainGenerator(Elaboratable):
 class JT51SynthPlatform(QMTechXC7A35TPlatform, LUNAPlatform):
     clock_domain_generator = JT51SynthClockDomainGenerator
     default_usb_connection = "ulpi"
+    ulpi_raw_clock_domain  = "usb_shift"
 
     def toolchain_prepare(self, fragment, name, **kwargs):
         plan = super().toolchain_prepare(fragment, name, **kwargs)

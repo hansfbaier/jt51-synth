@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-from nmigen import *
-from nmigen.lib.fifo import AsyncFIFO
-from nmigen.cli import main
-from nmigen_library.stream import StreamInterface
+from amaranth import *
+from amaranth.lib.fifo import AsyncFIFO
+from amaranth.cli import main
+from amlib.stream import StreamInterface
 from mido.messages.specs import SPEC_LOOKUP
 
 midi_to_keycode = {

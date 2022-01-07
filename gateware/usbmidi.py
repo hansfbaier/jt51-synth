@@ -1,5 +1,5 @@
-from nmigen import *
-from nmigen.build import Platform
+from amaranth import *
+from amaranth.build import Platform
 
 from luna.usb2                      import USBDevice, USBStreamInEndpoint, USBStreamOutEndpoint
 from luna.gateware.usb.usb2.request import StallOnlyRequestHandler
@@ -8,7 +8,7 @@ from usb_protocol.types                       import USBRequestType, USBDirectio
 from usb_protocol.emitters                    import DeviceDescriptorCollection
 from usb_protocol.emitters.descriptors        import midi1
 
-from nmigen_library.stream                    import StreamInterface
+from amlib.stream                    import StreamInterface
 
 class USBMIDI(Elaboratable):
     def __init__(self, use_ila=False):

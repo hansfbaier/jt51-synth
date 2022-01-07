@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from midicontroller import MIDIController
-from nmigen.sim import Simulator, Tick
+from amaranth.sim import Simulator, Tick
 
 if __name__ == "__main__":
     dut = MIDIController()

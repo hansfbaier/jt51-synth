@@ -1,13 +1,13 @@
-from nmigen          import Elaboratable, Module, ClockSignal, ResetSignal, DomainRenamer
-from nmigen.hdl.ast  import Signal
-from nmigen.lib.fifo import AsyncFIFO
-from nmigen.cli      import main
+from amaranth          import Elaboratable, Module, ClockSignal, ResetSignal, DomainRenamer
+from amaranth.hdl.ast  import Signal
+from amaranth.lib.fifo import AsyncFIFO
+from amaranth.cli      import main
 
-from nmigen_library.stream      import StreamInterface
-from nmigen_library.stream import connect_stream_to_fifo
+from amlib.stream      import StreamInterface
+from amlib.stream import connect_stream_to_fifo
 
 from jt51           import Jt51, Jt51Streamer
-from resampler      import FractionalResampler
+from amlib.dsp      import FractionalResampler
 from adat           import ADATTransmitter
 from midicontroller import MIDIController
 
@@ -31,7 +31,7 @@ class SynthModule(Elaboratable):
         m.submodules.jt51streamer = jt51streamer = Jt51Streamer(jt51instance)
 
         bitwidth = 16
-        cutoff_frequency = 20e3
+        cutoff_frequency = int(20e3)
         verbose = False
         m.submodules.resampler_left = resampler_left = DomainRenamer("jt51")(FractionalResampler(
             input_samplerate=56e3, upsample_factor=6, downsample_factor=7, filter_order=24,

@@ -1,5 +1,5 @@
-from nmigen import *
-from nmigen.build import Platform
+from amaranth import *
+from amaranth.build import Platform
 
 class PWM(Elaboratable):
 	def __init__(self, width=8):

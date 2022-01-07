@@ -4,19 +4,19 @@
 # SPDX-License-Identifier: MIT
 import os
 
-from nmigen          import Elaboratable, Module, Signal, ClockSignal
+from amaranth          import Elaboratable, Module, Signal, ClockSignal
 from luna            import top_level_cli
 
 from usbmidi         import USBMIDI
 from synthmodule     import SynthModule
 
-from luna.gateware.debug.ila import StreamILA, ILACoreParameters
+from amlib.debug.ila import StreamILA, ILACoreParameters
 from luna.gateware.usb.usb2.endpoints.stream  import USBMultibyteStreamInEndpoint
 
 class JT51Synth(Elaboratable):
     """ JT51 based FPGA synthesizer with USB MIDI, TopLevel Module """
 
-    USE_ILA = True
+    USE_ILA = False
 
     def elaborate(self, platform):
         m = Module()
@@ -35,8 +35,8 @@ class JT51Synth(Elaboratable):
             adat_clock = Signal()
             m.d.comb += adat_clock.eq(ClockSignal("adat"))
 
-            usb_valid = Signal()
-            usb_ready = Signal()
+            usb_valid   = Signal()
+            usb_ready   = Signal()
             usb_payload = Signal()
 
             m.d.comb += [

@@ -1,6 +1,6 @@
-from nmigen         import Elaboratable, Module, Signal, Instance, ClockDomain
-from nmigen.hdl.ast import ResetSignal
-from nmigen_library.stream import StreamInterface
+from amaranth         import Elaboratable, Module, Signal, Instance, ClockDomain
+from amaranth.hdl.ast import ResetSignal
+from amlib.stream import StreamInterface
 
 class Jt51Streamer(Elaboratable):
     def __init__(self, jt51) -> None:
