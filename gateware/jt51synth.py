@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 import os
 
-from amaranth          import Elaboratable, Module, Signal, ClockSignal
+from amaranth        import Elaboratable, Module, Signal, ClockSignal
 from luna            import top_level_cli
 
 from usbmidi         import USBMIDI

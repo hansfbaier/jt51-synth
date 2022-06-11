@@ -79,6 +79,38 @@ class Jt51Streamer(Elaboratable):
         return m
 
 class Jt51(Elaboratable):
+    FILES = [
+                'jt51/hdl/filter/jt51_sincf.v',
+                'jt51/hdl/filter/jt51_interpol.v',
+                'jt51/hdl/filter/jt51_fir_ram.v',
+                'jt51/hdl/filter/jt51_fir8.v',
+                'jt51/hdl/filter/jt51_fir4.v',
+                'jt51/hdl/filter/jt51_fir.v',
+                'jt51/hdl/filter/jt51_dac2.v',
+                'jt51/hdl/jt51_timers.v',
+                'jt51/hdl/jt51_sh.v',
+                'jt51/hdl/jt51_reg.v',
+                'jt51/hdl/jt51_pm.v',
+                'jt51/hdl/jt51_phrom.v',
+                'jt51/hdl/jt51_phinc_rom.v',
+                'jt51/hdl/jt51_pg.v',
+                'jt51/hdl/jt51_op.v',
+                'jt51/hdl/jt51_noise_lfsr.v',
+                'jt51/hdl/jt51_noise.v',
+                'jt51/hdl/jt51_mod.v',
+                'jt51/hdl/jt51_mmr.v',
+                'jt51/hdl/jt51_lin2exp.v',
+                'jt51/hdl/jt51_lfo.v',
+                'jt51/hdl/jt51_kon.v',
+                'jt51/hdl/jt51_exprom.v',
+                'jt51/hdl/jt51_exp2lin.v',
+                'jt51/hdl/jt51_eg.v',
+                'jt51/hdl/jt51_csr_op.v',
+                'jt51/hdl/jt51_csr_ch.v',
+                'jt51/hdl/jt51_acc.v',
+                'jt51/hdl/jt51.v',
+            ]
+
     def __init__(self) -> None:
         self.rst      = Signal()
         self.clk      = Signal()

@@ -6,6 +6,7 @@ from luna.gateware.platform.core import LUNAPlatform
 from amaranth_boards.resources import *
 from amaranth_boards.qmtech_ep4ce import QMTechEP4CEPlatform
 
+from jt51 import Jt51
 
 class JT51SynthClockDomainGenerator(Elaboratable):
     def __init__(self, *, clock_frequencies=None, clock_signal_name=None):
@@ -116,35 +117,6 @@ class JT51SynthPlatform(QMTechEP4CEPlatform, LUNAPlatform):
             set_instance_assignment -name DECREASE_INPUT_DELAY_TO_INPUT_REGISTER OFF -to *ulpi*
             set_instance_assignment -name INCREASE_DELAY_TO_OUTPUT_PIN OFF -to *ulpi*
             set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/filter/jt51_sincf.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/filter/jt51_interpol.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/filter/jt51_fir_ram.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/filter/jt51_fir8.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/filter/jt51_fir4.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/filter/jt51_fir.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/filter/jt51_dac2.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_timers.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_sh.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_reg.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_pm.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_phrom.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_phinc_rom.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_pg.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_op.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_noise_lfsr.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_noise.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_mod.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_mmr.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_lin2exp.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_lfo.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_kon.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_exprom.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_exp2lin.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_eg.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_csr_op.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_csr_ch.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51_acc.v
-            set_global_assignment -name VERILOG_FILE ../gateware/jt51/hdl/jt51.v
         """
         templates["{{name}}.sdc"] += r"""
             derive_pll_clocks
@@ -157,6 +129,12 @@ class JT51SynthPlatform(QMTechEP4CEPlatform, LUNAPlatform):
 #            set_net_delay -from [get_registers synthmodule:synthmodule|adat_transmitter:adat_transmitter|transmit_fifo:transmit_fifo|storage*] -to [get_registers synthmodule:synthmodule|adat_transmitter:adat_transmitter|transmit_fifo:transmit_fifo|_*] -max -get_value_from_clock_period dst_clock_period -value_multiplier 0.8
 #            set_max_skew -from [get_keepers synthmodule:synthmodule|adat_transmitter:adat_transmitter|transmit_fifo:transmit_fifo|storage*] -to [get_keepers synthmodule:synthmodule|adat_transmitter:adat_transmitter|transmit_fifo:transmit_fifo|_*] -get_skew_value_from_clock_period min_clock_period -skew_value_multiplier 0.8
 #        """
+
+        for file in Jt51.FILES:
+            filepath = "gateware/" + file
+            f = open(filepath, 'r')
+            self.add_file(file, f)
+
         return templates
 
     def __init__(self):
